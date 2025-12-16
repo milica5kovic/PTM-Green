@@ -443,21 +443,21 @@
                                         : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                                         }`}
 
-                                >
+                                >                                    👨‍🏫 Teacher View
+                                </button>
 
+                                {teacherLoggedIn && (
                                     <button
                                         onClick={() => {
                                             setTeacherLoggedIn(false);
                                             setTeacherPassword('');
                                             setView('home');
                                         }}
-                                        className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 font-medium"
+                                        className="bg-red-500 text-white px-4 py-2 rounded-lg"
                                     >
                                         🚪 Logout
                                     </button>
-
-                                    👨‍🏫 Teacher View
-                                </button>
+                                )}
                                 <button
                                     onClick={() => setView('admin-login')}
                                     className={`px-6 py-2.5 rounded-lg font-medium transition-all ${view === 'admin-view' || view === 'admin-login'
