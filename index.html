@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PTM Booking System</title>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, getDocs, doc, deleteDoc, writeBatch }
+            from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBi_4NxMjjE2D-gvo_quXLUt4MNTrjG644",
+            authDomain: "parent-teacher-meeting-927c9.firebaseapp.com",
+            projectId: "parent-teacher-meeting-927c9",
+            storageBucket: "parent-teacher-meeting-927c9.firebasestorage.app",
+            messagingSenderId: "620244891442",
+            appId: "1:620244891442:web:a11512ff98978950ba092b"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        window.db = getFirestore(app);
+        window.firestore = { collection, addDoc, getDocs, doc, deleteDoc, writeBatch };
+    </script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        const PTMBookingSystem = () => {
+            const [view, setView] = useState('home');
+            const [selectedYear, setSelectedYear] = useState(null);
+            const [selectedTeacher, setSelectedTeacher] = useState(null);
+            const [bookings, setBookings] = useState([]);
+            const [parentName, setParentName] = useState('');
+            const [parentEmail, setParentEmail] = useState('');
+            const [studentName, setStudentName] = useState('');
+            const [adminLoggedIn, setAdminLoggedIn] = useState(false);
+            const [adminPassword, setAdminPassword] = useState('');
+
+            const PTM_DATE = '23rd January 2025';
+            const START_TIME = '16:00';
+            const END_TIME = '18:45';
+            const SLOT_DURATION = 15;
+
+            const yearGroups = [
+                { id: 'Y1', name: 'Year 1' },
+                { id: 'Y2', name: 'Year 2' },
+                { id: 'Y3', name: 'Year 3' },
+                { id: 'Y4', name: 'Year 4' },
+                { id: 'Y5', name: 'Year 5' },
+                { id: 'Y6', name: 'Year 6' },
+                { id: 'Y7', name: 'Year 7' },
+                { id: 'Y8', name: 'Year 8' },
+                { id: 'Y9', name: 'Year 9' },
+            ];
+
+            const teachers = {
+                Y1: [
+                    { id: 'T_Mirjana_Ivanovic', name: 'Ms. Mirjana Ivanovic', subject: 'Class Teacher' },
+                    { id: 'T_Ashlie_Williams', name: 'Ms. Ashlie Williams', subject: 'ESL' },
+                    { id: 'T_Snezana_Cvijanovic', name: 'Ms. Snezana Cvijanovic', subject: 'Music & ESL' },
+                    { id: 'T_Petar_Jedoksic', name: 'Mr. Petar Jedoksic', subject: 'PE' },
+                    { id: 'T_Irena_Djukic', name: 'Ms. Irena Djukic', subject: 'ART' },
+                    { id: 'T_Iva_Josipovic_Aleksic', name: 'Ms. Iva Josipovic Aleksic', subject: 'PD/PSHE' },
+                    { id: 'T_Zoran_Nikolic', name: 'Mr. Zoran Nikolic', subject: 'Cooking & Gardening' },
+                    { id: 'T_Jana_Radovic', name: 'Ms. Jana Radovic', subject: 'Assistant' },
+                    { id: 'T_Milica_Petkovic', name: 'Ms. Milica Petkovic', subject: 'ICT' },
+                ],
+                Y2: [
+                    { id: 'T_Vera_Jovanovic', name: 'Ms. Vera Jovanovic', subject: 'Class Teacher' },
+                    { id: 'T_Ashlie_Williams', name: 'Ms. Ashlie Williams', subject: 'ESL' },
+                    { id: 'T_Snezana_Cvijanovic', name: 'Ms. Snezana Cvijanovic', subject: 'Music & ESL' },
+                    { id: 'T_Petar_Jedoksic', name: 'Mr. Petar Jedoksic', subject: 'PE' },
+                    { id: 'T_Irena_Djukic', name: 'Ms. Irena Djukic', subject: 'ART' },
+                    { id: 'T_Iva_Josipovic_Aleksic', name: 'Ms. Iva Josipovic Aleksic', subject: 'PD/PSHE' },
+                    { id: 'T_Zoran_Nikolic', name: 'Mr. Zoran Nikolic', subject: 'Cooking & Gardening' },
+                    { id: 'T_Jana_Radovic', name: 'Ms. Jana Radovic', subject: 'Assistant' },
+                    { id: 'T_Milica_Petkovic', name: 'Ms. Milica Petkovic', subject: 'ICT' },
+                ],
+                Y3: [
+                    { id: 'T_Dunja_Vidojkovic', name: 'Ms. Dunja Vidojkovic', subject: 'Class Teacher' },
+                    { id: 'T_Ashlie_Williams', name: 'Ms. Ashlie Williams', subject: 'ESL' },
+                    { id: 'T_Snezana_Cvijanovic', name: 'Ms. Snezana Cvijanovic', subject: 'Music & ESL' },
+                    { id: 'T_Petar_Jedoksic', name: 'Mr. Petar Jedoksic', subject: 'PE' },
+                    { id: 'T_Irena_Djukic', name: 'Ms. Irena Djukic', subject: 'ART' },
+                    { id: 'T_Iva_Josipovic_Aleksic', name: 'Ms. Iva Josipovic Aleksic', subject: 'PD/PSHE' },
+                    { id: 'T_Zoran_Nikolic', name: 'Mr. Zoran Nikolic', subject: 'Cooking & Gardening' },
+                    { id: 'T_Jana_Radovic', name: 'Ms. Jana Radovic', subject: 'Assistant' },
+                    { id: 'T_Marija_Mutavdzic', name: 'Ms. Marija Mutavdzic', subject: 'French & Serbian sec' },
+                    { id: 'T_Milica_Petrovic', name: 'Ms. Milica Petrovic', subject: 'Serbian first' },
+                    { id: 'T_Milica_Petkovic', name: 'Ms. Milica Petkovic', subject: 'ICT' },
+                ],
+                Y4: [
+                    { id: 'T_Jana', name: 'Ms. Jana', subject: 'Class Teacher' },
+                    { id: 'T_Ashlie_Williams', name: 'Ms. Ashlie Williams', subject: 'ESL' },
+                    { id: 'T_Snezana_Cvijanovic', name: 'Ms. Snezana Cvijanovic', subject: 'Music & ESL' },
+                    { id: 'T_Petar_Jedoksic', name: 'Mr. Petar Jedoksic', subject: 'PE' },
+                    { id: 'T_Irena_Djukic', name: 'Ms. Irena Djukic', subject: 'ART' },
+                    { id: 'T_Iva_Josipovic_Aleksic', name: 'Ms. Iva Josipovic Aleksic', subject: 'PD/PSHE' },
+                    { id: 'T_Zoran_Nikolic', name: 'Mr. Zoran Nikolic', subject: 'Cooking & Gardening' },
+                    { id: 'T_Jana_Radovic', name: 'Ms. Jana Radovic', subject: 'Assistant' },
+                    { id: 'T_Marija_Mutavdzic', name: 'Ms. Marija Mutavdzic', subject: 'French & Serbian sec' },
+                    { id: 'T_Milica_Petrovic', name: 'Ms. Milica Petrovic', subject: 'Serbian first' },
+                    { id: 'T_Milica_Petkovic', name: 'Ms. Milica Petkovic', subject: 'ICT' },
+                ],
+                Y5: [
+                    { id: 'T_Jelena_Milanovic', name: 'Ms. Jelena Milanovic', subject: 'Class Teacher Y5a / English' },
+                    { id: 'T_Snezana_Cvijanovic', name: 'Ms. Snezana Cvijanovic', subject: 'Class Teacher Y5b & Music & ESL' },
+                    { id: 'T_Ashlie_Williams', name: 'Ms. Ashlie Williams', subject: 'ESL' },
+                    { id: 'T_Zoran_Zivkovic', name: 'Mr. Zoran Zivkovic', subject: 'History & ESL' },
+                    { id: 'T_Milica_Djukic_Spasojevic', name: 'Ms. Milica Djukic-Spasojevic', subject: 'Maths Y5a' },
+                    { id: 'T_Milica_Petkovic', name: 'Ms. Milica Petkovic', subject: 'Maths Y5b & ICT' },
+                    { id: 'T_Tijana_Krsa', name: 'Ms. Tijana Krsa', subject: 'Science' },
+                    { id: 'T_Sava_Simic', name: 'Mr. Sava Simic', subject: 'Geography' },
+                    { id: 'T_Marija_Mutavdzic', name: 'Ms. Marija Mutavdzic', subject: 'French & Serbian sec' },
+                    { id: 'T_Marina_Ristic', name: 'Ms. Marina Ristic', subject: 'German & Serbian sec' },
+                    { id: 'T_Milica_Petrovic', name: 'Ms. Milica Petrovic', subject: 'Serbian first' },
+                    { id: 'T_Milos_Lazic', name: 'Mr. Milos Lazic', subject: 'PE' },
+                    { id: 'T_Irena_Djukic', name: 'Ms. Irena Djukic', subject: 'ART' },
+                    { id: 'T_Iva_Josipovic_Aleksic', name: 'Ms. Iva Josipovic Aleksic', subject: 'PD/PSHE' },
+                    { id: 'T_Zoran_Nikolic', name: 'Mr. Zoran Nikolic', subject: 'Cooking & Gardening' },
+                    { id: 'T_Jana_Radovic', name: 'Ms. Jana Radovic', subject: 'Assistant' },
+                ],
+                Y6: [
+                    { id: 'T_Sava_Simic', name: 'Mr. Sava Simic', subject: 'Class Teacher & Geography' },
+                    { id: 'T_Snezana_Cvijanovic', name: 'Ms. Snezana Cvijanovic', subject: 'Music & ESL' },
+                    { id: 'T_Jelena_Milanovic', name: 'Ms. Jelena Milanovic', subject: 'English' },
+                    { id: 'T_Tamara_Stojancic', name: 'Ms. Tamara Stojancic', subject: 'English' },
+                    { id: 'T_Zoran_Zivkovic', name: 'Mr. Zoran Zivkovic', subject: 'History & ESL' },
+                    { id: 'T_Milica_Djukic_Spasojevic', name: 'Ms. Milica Djukic-Spasojevic', subject: 'Maths' },
+                    { id: 'T_Milica_Petkovic', name: 'Ms. Milica Petkovic', subject: 'ICT' },
+                    { id: 'T_Tijana_Krsa', name: 'Ms. Tijana Krsa', subject: 'Science' },
+                    { id: 'T_Marija_Mutavdzic', name: 'Ms. Marija Mutavdzic', subject: 'French & Serbian sec' },
+                    { id: 'T_Marina_Ristic', name: 'Ms. Marina Ristic', subject: 'German & Serbian sec' },
+                    { id: 'T_Milica_Petrovic', name: 'Ms. Milica Petrovic', subject: 'Serbian first' },
+                    { id: 'T_Milos_Lazic', name: 'Mr. Milos Lazic', subject: 'PE' },
+                    { id: 'T_Irena_Djukic', name: 'Ms. Irena Djukic', subject: 'ART' },
+                    { id: 'T_Iva_Josipovic_Aleksic', name: 'Ms. Iva Josipovic Aleksic', subject: 'PD/PSHE' },
+                    { id: 'T_Zoran_Nikolic', name: 'Mr. Zoran Nikolic', subject: 'Cooking & Gardening' },
+                    { id: 'T_Jana_Radovic', name: 'Ms. Jana Radovic', subject: 'Assistant' },
+                ],
+                Y7: [
+                    { id: 'T_Milos_Lazic', name: 'Mr. Milos Lazic', subject: 'Class Teacher & PE' },
+                    { id: 'T_Snezana_Cvijanovic', name: 'Ms. Snezana Cvijanovic', subject: 'Music & ESL' },
+                    { id: 'T_Jelena_Milanovic', name: 'Ms. Jelena Milanovic', subject: 'English' },
+                    { id: 'T_Tamara_Stojancic', name: 'Ms. Tamara Stojancic', subject: 'English' },
+                    { id: 'T_Zoran_Zivkovic', name: 'Mr. Zoran Zivkovic', subject: 'History & ESL' },
+                    { id: 'T_Milica_Djukic_Spasojevic', name: 'Ms. Milica Djukic-Spasojevic', subject: 'Maths' },
+                    { id: 'T_Milica_Petkovic', name: 'Ms. Milica Petkovic', subject: 'ICT' },
+                    { id: 'T_Tijana_Krsa', name: 'Ms. Tijana Krsa', subject: 'Science' },
+                    { id: 'T_Sava_Simic', name: 'Mr. Sava Simic', subject: 'Geography' },
+                    { id: 'T_Marija_Mutavdzic', name: 'Ms. Marija Mutavdzic', subject: 'French & Serbian sec' },
+                    { id: 'T_Marina_Ristic', name: 'Ms. Marina Ristic', subject: 'German & Serbian sec' },
+                    { id: 'T_Milica_Petrovic', name: 'Ms. Milica Petrovic', subject: 'Serbian first' },
+                    { id: 'T_Irena_Djukic', name: 'Ms. Irena Djukic', subject: 'ART' },
+                    { id: 'T_Iva_Josipovic_Aleksic', name: 'Ms. Iva Josipovic Aleksic', subject: 'PD/PSHE' },
+                    { id: 'T_Zoran_Nikolic', name: 'Mr. Zoran Nikolic', subject: 'Cooking & Gardening' },
+                    { id: 'T_Jana_Radovic', name: 'Ms. Jana Radovic', subject: 'Assistant' },
+                ],
+                Y8: [
+                    { id: 'T_Tijana_Krsa', name: 'Ms. Tijana Krsa', subject: 'Class Teacher & Science' },
+                    { id: 'T_Snezana_Cvijanovic', name: 'Ms. Snezana Cvijanovic', subject: 'Music & ESL' },
+                    { id: 'T_Jelena_Milanovic', name: 'Ms. Jelena Milanovic', subject: 'English' },
+                    { id: 'T_Tamara_Stojancic', name: 'Ms. Tamara Stojancic', subject: 'English' },
+                    { id: 'T_Zoran_Zivkovic', name: 'Mr. Zoran Zivkovic', subject: 'History & ESL' },
+                    { id: 'T_Milica_Djukic_Spasojevic', name: 'Ms. Milica Djukic-Spasojevic', subject: 'Maths' },
+                    { id: 'T_Milica_Petkovic', name: 'Ms. Milica Petkovic', subject: 'ICT' },
+                    { id: 'T_Sava_Simic', name: 'Mr. Sava Simic', subject: 'Geography' },
+                    { id: 'T_Marija_Mutavdzic', name: 'Ms. Marija Mutavdzic', subject: 'French & Serbian sec' },
+                    { id: 'T_Marina_Ristic', name: 'Ms. Marina Ristic', subject: 'German & Serbian sec' },
+                    { id: 'T_Milica_Petrovic', name: 'Ms. Milica Petrovic', subject: 'Serbian first' },
+                    { id: 'T_Milos_Lazic', name: 'Mr. Milos Lazic', subject: 'PE' },
+                    { id: 'T_Irena_Djukic', name: 'Ms. Irena Djukic', subject: 'ART' },
+                    { id: 'T_Iva_Josipovic_Aleksic', name: 'Ms. Iva Josipovic Aleksic', subject: 'PD/PSHE' },
+                    { id: 'T_Zoran_Nikolic', name: 'Mr. Zoran Nikolic', subject: 'Cooking & Gardening' },
+                    { id: 'T_Jana_Radovic', name: 'Ms. Jana Radovic', subject: 'Assistant' },
+                ],
+                Y9: [
+                    { id: 'T_Tamara_Stojancic', name: 'Ms. Tamara Stojancic', subject: 'Class Teacher & English' },
+                    { id: 'T_Snezana_Cvijanovic', name: 'Ms. Snezana Cvijanovic', subject: 'Music & ESL' },
+                    { id: 'T_Jelena_Milanovic', name: 'Ms. Jelena Milanovic', subject: 'English' },
+                    { id: 'T_Zoran_Zivkovic', name: 'Mr. Zoran Zivkovic', subject: 'History & ESL' },
+                    { id: 'T_Milica_Djukic_Spasojevic', name: 'Ms. Milica Djukic-Spasojevic', subject: 'Maths' },
+                    { id: 'T_Milica_Petkovic', name: 'Ms. Milica Petkovic', subject: 'ICT' },
+                    { id: 'T_Tijana_Krsa', name: 'Ms. Tijana Krsa', subject: 'Science' },
+                    { id: 'T_Sava_Simic', name: 'Mr. Sava Simic', subject: 'Geography' },
+                    { id: 'T_Marija_Mutavdzic', name: 'Ms. Marija Mutavdzic', subject: 'French & Serbian sec' },
+                    { id: 'T_Marina_Ristic', name: 'Ms. Marina Ristic', subject: 'German & Serbian sec' },
+                    { id: 'T_Milica_Petrovic', name: 'Ms. Milica Petrovic', subject: 'Serbian first' },
+                    { id: 'T_Milos_Lazic', name: 'Mr. Milos Lazic', subject: 'PE' },
+                    { id: 'T_Irena_Djukic', name: 'Ms. Irena Djukic', subject: 'ART' },
+                    { id: 'T_Iva_Josipovic_Aleksic', name: 'Ms. Iva Josipovic Aleksic', subject: 'PD/PSHE' },
+                    { id: 'T_Zoran_Nikolic', name: 'Mr. Zoran Nikolic', subject: 'Cooking & Gardening' },
+                    { id: 'T_Jana_Radovic', name: 'Ms. Jana Radovic', subject: 'Assistant' },
+                ],
+            };
+
+            const generateTimeSlots = () => {
+                const slots = [];
+                let current = new Date(`2025-01-23T${START_TIME}`);
+                const end = new Date(`2025-01-23T${END_TIME}`);
+                while (current < end) {
+                    const hours = current.getHours().toString().padStart(2, '0');
+                    const minutes = current.getMinutes().toString().padStart(2, '0');
+                    slots.push(`${hours}:${minutes}`);
+                    current = new Date(current.getTime() + SLOT_DURATION * 60000);
+                }
+                return slots;
+            };
+
+            const timeSlots = generateTimeSlots();
+
+            const saveBooking = async (newBooking) => {
+                try {
+                    const { collection, addDoc } = window.firestore;
+                    const docRef = await addDoc(collection(window.db, 'bookings'), newBooking);
+                    setBookings([...bookings, { ...newBooking, id: docRef.id }]);
+                } catch (err) {
+                    console.error("Error saving booking:", err);
+                    alert("❌ Error saving booking. Please try again.");
+                }
+            };
+
+            const isSlotBooked = (teacherId, timeSlot) => bookings.some(b => b.teacherId === teacherId && b.timeSlot === timeSlot);
+            const isParentBusy = (email, timeSlot) => bookings.some(b => b.parentEmail === email && b.timeSlot === timeSlot);
+            const hasParentBookedTeacher = (email, teacherId) => bookings.some(b => b.parentEmail === email && b.teacherId === teacherId);
+
+            const validateEmail = (email) => {
+                return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+            };
+
+            const handleBooking = (timeSlot) => {
+                const trimmedName = parentName.trim();
+                const trimmedEmail = parentEmail.trim().toLowerCase();
+                const trimmedStudent = studentName.trim();
+
+                if (!trimmedName || !trimmedEmail || !trimmedStudent) {
+                    alert('⚠️ Please fill in all details');
+                    return;
+                }
+
+                if (!validateEmail(trimmedEmail)) {
+                    alert('⚠️ Please enter a valid email address');
+                    return;
+                }
+
+                if (isSlotBooked(selectedTeacher.id, timeSlot)) {
+                    alert('⚠️ This time slot is already booked with this teacher');
+                    return;
+                }
+
+                if (isParentBusy(trimmedEmail, timeSlot)) {
+                    alert('⚠️ You already have a meeting at this time with another teacher');
+                    return;
+                }
+
+                if (hasParentBookedTeacher(trimmedEmail, selectedTeacher.id)) {
+                    alert('⚠️ You have already booked a meeting with this teacher');
+                    return;
+                }
+
+                const endTime = new Date(`2025-01-23T${timeSlot}`);
+                endTime.setMinutes(endTime.getMinutes() + SLOT_DURATION);
+                const endStr = endTime.toTimeString().substring(0, 5);
+
+                const newBooking = {
+                    teacherId: selectedTeacher.id,
+                    teacherName: selectedTeacher.name,
+                    yearGroup: selectedYear,
+                    timeSlot,
+                    parentName: trimmedName,
+                    parentEmail: trimmedEmail,
+                    studentName: trimmedStudent,
+                    bookedAt: new Date().toISOString(),
+                };
+
+                saveBooking(newBooking);
+                alert(`✅ Booking Confirmed!\n\nTeacher: ${selectedTeacher.name}\nTime: ${timeSlot} - ${endStr}\nDate: ${PTM_DATE}\n\nYou can download a PDF of all your bookings from the booking page.`);
+                setView('teachers');
+            };
+
+            const fetchBookings = async () => {
+                try {
+                    const { collection, getDocs } = window.firestore;
+                    const querySnapshot = await getDocs(collection(window.db, 'bookings'));
+                    const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    setBookings(data);
+                } catch (err) {
+                    console.error("Error fetching bookings:", err);
+                }
+            };
+
+            useEffect(() => {
+                fetchBookings();
+            }, []);
+
+            const clearAllBookings = async () => {
+                if (!window.confirm("⚠️ Are you sure you want to delete ALL bookings? This cannot be undone!")) return;
+                try {
+                    const { collection, getDocs, writeBatch, doc } = window.firestore;
+                    const snapshot = await getDocs(collection(window.db, 'bookings'));
+                    const batch = writeBatch(window.db);
+                    snapshot.docs.forEach(docSnap => batch.delete(doc(window.db, 'bookings', docSnap.id)));
+                    await batch.commit();
+                    setBookings([]);
+                    alert("✅ All bookings have been deleted!");
+                } catch (err) {
+                    console.error("Error clearing bookings:", err);
+                    alert("❌ Error clearing bookings. Please try again.");
+                }
+            };
+
+            const generateParentPDF = (emailToGenerate) => {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+
+                const parentBookings = bookings.filter(b => b.parentEmail === emailToGenerate);
+                if (parentBookings.length === 0) return alert('❌ No bookings found for this email');
+
+                const { parentName, parentEmail, studentName } = parentBookings[0];
+
+                doc.setFontSize(18);
+                doc.setTextColor(34, 197, 94);
+                doc.text("Parent Teacher Meeting Schedule", 20, 20);
+                doc.setFontSize(11);
+                doc.setTextColor(0, 0, 0);
+                doc.text(`Parent: ${parentName}`, 20, 30);
+                doc.text(`Email: ${parentEmail}`, 20, 37);
+                doc.text(`Student: ${studentName}`, 20, 44);
+                doc.text(`Date: ${PTM_DATE}`, 20, 51);
+
+                const tableData = parentBookings
+                    .sort((a, b) => a.timeSlot.localeCompare(b.timeSlot))
+                    .map(b => {
+                        const endTime = new Date(`2025-01-23T${b.timeSlot}`);
+                        endTime.setMinutes(endTime.getMinutes() + SLOT_DURATION);
+                        const endStr = endTime.toTimeString().substring(0, 5);
+                        return [b.teacherName, b.yearGroup, `${b.timeSlot} - ${endStr}`, b.studentName];
+                    });
+
+                doc.autoTable({
+                    startY: 60,
+                    head: [['Teacher', 'Year', 'Time', 'Student']],
+                    body: tableData,
+                    theme: 'grid',
+                    headStyles: { fillColor: [34, 197, 94], textColor: 255 },
+                    styles: { fontSize: 10 }
+                });
+
+                doc.save(`${parentName.replace(/\s+/g, '_')}_PTM_Schedule.pdf`);
+            };
+
+            const downloadTeacherSchedule = (teacherName) => {
+                const teacherBookings = bookings.filter(b => b.teacherName === teacherName);
+
+                let content = `Parent Teacher Meeting Schedule\n`;
+                content += `Teacher: ${teacherName}\n`;
+                content += `Date: ${PTM_DATE}\n`;
+                content += `Total Bookings: ${teacherBookings.length}\n\n`;
+                content += `Time Slot\t\tYear Group\tParent Name\t\tStudent Name\t\tEmail\n`;
+                content += `${'='.repeat(100)}\n`;
+
+                timeSlots.forEach(slot => {
+                    const booking = teacherBookings.find(b => b.timeSlot === slot);
+                    if (booking) {
+                        const endTime = new Date(`2025-01-23T${slot}`);
+                        endTime.setMinutes(endTime.getMinutes() + SLOT_DURATION);
+                        const endStr = endTime.toTimeString().substring(0, 5);
+                        content += `${slot} - ${endStr}\t${booking.yearGroup}\t\t${booking.parentName}\t\t${booking.studentName}\t\t${booking.parentEmail}\n`;
+                    }
+                });
+
+                const blob = new Blob([content], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${teacherName.replace(/\s+/g, '_')}_schedule.txt`;
+                a.click();
+            };
+
+            const getMyBookings = () => {
+                if (!parentEmail) return [];
+                return bookings.filter(b => b.parentEmail === parentEmail.trim().toLowerCase());
+            };
+
+            return (
+                <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 p-4">
+                    <div className="max-w-6xl mx-auto">
+                        {/* Header with Logo Space */}
+                        <div className="bg-white rounded-lg shadow-xl p-6 mb-6 border-t-4 border-green-600">
+                            <div className="flex items-center justify-between mb-4">
+                                {/* Logo Space */}
+                                <div className="w-20 h-20 rounded-lg flex items-center justify-center overflow-hidden">
+                                    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQYMF5t5BBcSDPVKDiEv0j1AOem877LXsjshw&s" alt="Chartwell School Logo" className="w-full h-full object-contain" />
+                                </div>
+                                <div className="flex-1 text-center">
+                                    <h1 className="text-3xl font-bold text-green-900">
+                                        Parent Teacher Meeting
+                                    </h1>
+                                    <h2 className="text-xl font-semibold text-green-700 mt-1">
+                                        Booking System
+                                    </h2>
+                                </div>
+                                <div className="w-20"></div>
+                            </div>
+                            <div className="text-center">
+                                <p className="text-gray-700 font-medium">
+                                    📅 {PTM_DATE} | ⏰ 4:00 PM - 6:45 PM
+                                </p>
+                            </div>
+                            
+                            {/* Navigation Buttons */}
+                            <div className="flex flex-wrap justify-center gap-3 mt-6">
+                                <button
+                                    onClick={() => setView('home')}
+                                    className={`px-6 py-2.5 rounded-lg font-medium transition-all ${
+                                        view === 'home' || view === 'teachers' || view === 'booking'
+                                            ? 'bg-green-600 text-white shadow-lg hover:bg-green-700'
+                                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                    }`}
+                                >
+                                    📚 Parent Booking
+                                </button>
+                                <button
+                                    onClick={() => setView('teacher-view')}
+                                    className={`px-6 py-2.5 rounded-lg font-medium transition-all ${
+                                        view === 'teacher-view'
+                                            ? 'bg-green-600 text-white shadow-lg hover:bg-green-700'
+                                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                    }`}
+                                >
+                                    👨‍🏫 Teacher View
+                                </button>
+                                <button
+                                    onClick={() => setView('admin-login')}
+                                    className={`px-6 py-2.5 rounded-lg font-medium transition-all ${
+                                        view === 'admin-view' || view === 'admin-login'
+                                            ? 'bg-green-600 text-white shadow-lg hover:bg-green-700'
+                                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                    }`}
+                                >
+                                    🔐 Admin View
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Home - Year Group Selection */}
+                        {view === 'home' && (
+                            <div>
+                                <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+                                    <h3 className="text-xl font-bold text-green-900 mb-2">Select Your Child's Year Group</h3>
+                                    <p className="text-gray-600 mb-4">Choose the year group to view available teachers</p>
+                                </div>
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                    {yearGroups.map(year => (
+                                        <button
+                                            key={year.id}
+                                            onClick={() => {
+                                                setSelectedYear(year.id);
+                                                setView('teachers');
+                                            }}
+                                            className="bg-white p-8 rounded-lg shadow-md hover:shadow-2xl transition-all hover:scale-105 border-2 border-transparent hover:border-green-500"
+                                        >
+                                            <div className="text-4xl font-bold text-green-600 mb-2">{year.id}</div>
+                                            <div className="text-gray-700 font-medium">{year.name}</div>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Teachers List */}
+                        {view === 'teachers' && (
+                            <div>
+                                <button
+                                    onClick={() => setView('home')}
+                                    className="mb-4 text-green-600 hover:text-green-800 font-medium flex items-center"
+                                >
+                                    ← Back to Year Groups
+                                </button>
+                                <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+                                    <h2 className="text-2xl font-bold text-green-900">Teachers for {selectedYear}</h2>
+                                    <p className="text-gray-600 mt-1">Select a teacher to book an appointment</p>
+                                </div>
+                                <div className="grid md:grid-cols-2 gap-4">
+                                    {teachers[selectedYear].map(teacher => {
+                                        const teacherBookingsCount = bookings.filter(b => b.teacherId === teacher.id).length;
+                                        const totalSlots = timeSlots.length;
+                                        const availableSlots = totalSlots - teacherBookingsCount;
+                                        
+                                        return (
+                                                                                            <div key={teacher.id} className="bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition-all border-l-4 border-green-500">
+                                                <div className="flex justify-between items-start">
+                                                    <div className="flex-1">
+                                                        <h3 className="text-xl font-semibold text-gray-800">{teacher.name}</h3>
+                                                        <p className="text-gray-600 mt-1">{teacher.subject}</p>
+                                                        <div className="mt-3">
+                                                            <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
+                                                                availableSlots > 5 ? 'bg-green-100 text-green-800' :
+                                                                availableSlots > 0 ? 'bg-yellow-100 text-yellow-800' :
+                                                                'bg-red-100 text-red-800'
+                                                            }`}>
+                                                                {availableSlots} slots available
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                    <button
+                                                        onClick={() => {
+                                                            setSelectedTeacher(teacher);
+                                                            setView('booking');
+                                                        }}
+                                                        className="bg-green-600 text-white px-5 py-2.5 rounded-lg hover:bg-green-700 font-medium transition-all shadow-md hover:shadow-lg"
+                                                    >
+                                                        Book
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Booking Page */}
+                        {view === 'booking' && selectedTeacher && (
+                            <div>
+                                <button
+                                    onClick={() => setView('teachers')}
+                                    className="mb-4 text-green-600 hover:text-green-800 font-medium flex items-center"
+                                >
+                                    ← Back to Teachers
+                                </button>
+                                
+                                {/* Teacher Info Card */}
+                                <div className="bg-white p-6 rounded-lg shadow-lg mb-6 border-l-4 border-green-600">
+                                    <h2 className="text-2xl font-bold text-green-900">{selectedTeacher.name}</h2>
+                                    <p className="text-gray-700 mt-1 text-lg">{selectedTeacher.subject}</p>
+                                    <p className="text-sm text-gray-600 mt-2">Year Group: <span className="font-semibold">{selectedYear}</span></p>
+                                </div>
+
+                                {/* Parent Details Form */}
+                                <div className="bg-white p-6 rounded-lg shadow-lg mb-6">
+                                    <h3 className="text-lg font-bold text-gray-800 mb-4">Your Details</h3>
+                                    <div className="grid md:grid-cols-3 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">Parent Name *</label>
+                                            <input
+                                                type="text"
+                                                placeholder="Enter your name"
+                                                value={parentName}
+                                                onChange={(e) => setParentName(e.target.value)}
+                                                className="w-full border-2 border-gray-300 rounded-lg px-4 py-2.5 focus:border-green-500 focus:outline-none"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">Parent Email *</label>
+                                            <input
+                                                type="email"
+                                                placeholder="your.email@example.com"
+                                                value={parentEmail}
+                                                onChange={(e) => setParentEmail(e.target.value)}
+                                                className="w-full border-2 border-gray-300 rounded-lg px-4 py-2.5 focus:border-green-500 focus:outline-none"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">Student Name *</label>
+                                            <input
+                                                type="text"
+                                                placeholder="Student's name"
+                                                value={studentName}
+                                                onChange={(e) => setStudentName(e.target.value)}
+                                                className="w-full border-2 border-gray-300 rounded-lg px-4 py-2.5 focus:border-green-500 focus:outline-none"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* My Bookings Summary */}
+                                {parentEmail && getMyBookings().length > 0 && (
+                                    <div className="bg-blue-50 border-2 border-blue-300 rounded-lg p-4 mb-6">
+                                        <div className="flex justify-between items-center">
+                                            <div>
+                                                <h4 className="font-bold text-blue-900">📋 Your Current Bookings ({getMyBookings().length})</h4>
+                                                <div className="mt-2 text-sm text-blue-800">
+                                                    {getMyBookings().map(b => (
+                                                        <div key={b.id} className="flex items-center gap-2 mt-1">
+                                                            <span className="font-semibold">{b.timeSlot}</span> - {b.teacherName} ({b.yearGroup})
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                            <button
+                                                onClick={() => generateParentPDF(parentEmail.trim().toLowerCase())}
+                                                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-medium"
+                                            >
+                                                📄 Download PDF
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Time Slots */}
+                                <div className="bg-white p-6 rounded-lg shadow-lg">
+                                    <h3 className="text-lg font-bold text-gray-800 mb-4">Available Time Slots</h3>
+                                    <p className="text-sm text-gray-600 mb-4">Click on an available slot to book your appointment (15 minutes each)</p>
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                        {timeSlots.map(slot => {
+                                            const endTime = new Date(`2025-01-23T${slot}`);
+                                            endTime.setMinutes(endTime.getMinutes() + SLOT_DURATION);
+                                            const endStr = endTime.toTimeString().substring(0, 5);
+                                            const booked = isSlotBooked(selectedTeacher.id, slot);
+                                            const parentBusy = parentEmail && isParentBusy(parentEmail.trim().toLowerCase(), slot);
+                                            const alreadyBooked = parentEmail && hasParentBookedTeacher(parentEmail.trim().toLowerCase(), selectedTeacher.id);
+
+                                            return (
+                                                <button
+                                                    key={slot}
+                                                    onClick={() => handleBooking(slot)}
+                                                    disabled={booked || parentBusy || alreadyBooked}
+                                                    className={`p-4 rounded-lg text-sm font-medium transition-all ${
+                                                        booked
+                                                            ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                                                            : parentBusy
+                                                            ? 'bg-yellow-100 text-yellow-800 cursor-not-allowed border-2 border-yellow-400'
+                                                            : alreadyBooked
+                                                            ? 'bg-red-100 text-red-800 cursor-not-allowed border-2 border-red-400'
+                                                            : 'bg-green-100 text-green-800 hover:bg-green-200 hover:shadow-lg border-2 border-green-400'
+                                                    }`}
+                                                >
+                                                    <div className="font-bold">{slot} - {endStr}</div>
+                                                    {booked && <div className="text-xs mt-1">Booked</div>}
+                                                    {parentBusy && <div className="text-xs mt-1">⚠️ Conflict</div>}
+                                                    {alreadyBooked && <div className="text-xs mt-1">✓ Already booked</div>}
+                                                    {!booked && !parentBusy && !alreadyBooked && <div className="text-xs mt-1">Available</div>}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Admin Login */}
+                        {view === 'admin-login' && !adminLoggedIn && (
+                            <div className="max-w-md mx-auto bg-white p-8 rounded-lg shadow-xl border-t-4 border-green-600">
+                                <h2 className="text-2xl font-bold text-green-900 mb-6 text-center">🔐 Admin Login</h2>
+                                <div className="mb-6">
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                                    <input
+                                        type="password"
+                                        placeholder="Enter admin password"
+                                        value={adminPassword}
+                                        onChange={(e) => setAdminPassword(e.target.value)}
+                                        onKeyPress={(e) => {
+                                            if (e.key === 'Enter') {
+                                                if (adminPassword === 'Secret123') {
+                                                    setAdminLoggedIn(true);
+                                                    setView('admin-view');
+                                                } else {
+                                                    alert('❌ Incorrect password!');
+                                                }
+                                            }
+                                        }}
+                                        className="w-full border-2 border-gray-300 rounded-lg px-4 py-3 focus:border-green-500 focus:outline-none"
+                                    />
+                                </div>
+                                <button
+                                    onClick={() => {
+                                        if (adminPassword === 'Secret123') {
+                                            setAdminLoggedIn(true);
+                                            setView('admin-view');
+                                        } else {
+                                            alert('❌ Incorrect password!');
+                                        }
+                                    }}
+                                    className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 w-full font-medium text-lg shadow-lg"
+                                >
+                                    Login
+                                </button>
+                            </div>
+                        )}
+
+                        {/* Teacher View */}
+                        {view === 'teacher-view' && (
+                            <div>
+                                <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+                                    <h2 className="text-2xl font-bold text-green-900">Teacher Schedules</h2>
+                                    <p className="text-gray-600 mt-1">View and download individual teacher schedules</p>
+                                </div>
+                                <div className="grid md:grid-cols-2 gap-4">
+                                    {Object.values(teachers)
+                                        .flat()
+                                        .reduce((unique, teacher) => {
+                                            if (!unique.find(t => t.id === teacher.id)) unique.push(teacher);
+                                            return unique;
+                                        }, [])
+                                        .map((teacher) => {
+                                            const teacherBookings = bookings.filter(b => b.teacherId === teacher.id);
+                                            return (
+                                                <div key={teacher.id} className="bg-white p-6 rounded-lg shadow-md border-l-4 border-green-500">
+                                                    <div className="flex justify-between items-start mb-4">
+                                                        <div>
+                                                            <h4 className="text-lg font-semibold text-gray-800">{teacher.name}</h4>
+                                                            <p className="text-gray-600 text-sm">{teacher.subject}</p>
+                                                            <p className="text-sm text-green-600 font-medium mt-2">
+                                                                📊 {teacherBookings.length} bookings
+                                                            </p>
+                                                        </div>
+                                                        <button
+                                                            onClick={() => downloadTeacherSchedule(teacher.name)}
+                                                            className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-green-700 font-medium shadow-md"
+                                                        >
+                                                            📥 Download
+                                                        </button>
+                                                    </div>
+                                                    <div className="max-h-60 overflow-y-auto">
+                                                        {teacherBookings.length > 0 ? (
+                                                            teacherBookings
+                                                                .sort((a, b) => a.timeSlot.localeCompare(b.timeSlot))
+                                                                .map(booking => {
+                                                                    const endTime = new Date(`2025-01-23T${booking.timeSlot}`);
+                                                                    endTime.setMinutes(endTime.getMinutes() + SLOT_DURATION);
+                                                                    const endStr = endTime.toTimeString().substring(0, 5);
+                                                                    return (
+                                                                        <div key={booking.id} className="border-l-4 border-green-500 pl-3 py-2 mb-2 bg-green-50 rounded">
+                                                                            <div className="font-semibold text-sm text-green-900">
+                                                                                {booking.timeSlot} - {endStr} ({booking.yearGroup})
+                                                                            </div>
+                                                                            <div className="text-sm text-gray-700">{booking.parentName}</div>
+                                                                            <div className="text-xs text-gray-600">Student: {booking.studentName}</div>
+                                                                            <div className="text-xs text-gray-500">{booking.parentEmail}</div>
+                                                                        </div>
+                                                                    );
+                                                                })
+                                                        ) : (
+                                                            <p className="text-gray-500 text-sm italic">No bookings yet</p>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Admin View */}
+                        {view === 'admin-view' && adminLoggedIn && (
+                            <div>
+                                <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+                                    <div className="flex justify-between items-center">
+                                        <div>
+                                            <h2 className="text-2xl font-bold text-green-900">Admin Dashboard</h2>
+                                            <p className="text-gray-600 mt-1">Manage all bookings and view parent schedules</p>
+                                        </div>
+                                        <button
+                                            onClick={() => {
+                                                setAdminLoggedIn(false);
+                                                setAdminPassword('');
+                                                setView('home');
+                                            }}
+                                            className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 font-medium"
+                                        >
+                                            🚪 Logout
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="bg-yellow-50 border-2 border-yellow-400 rounded-lg p-4 mb-6">
+                                    <div className="flex justify-between items-center">
+                                        <div>
+                                            <p className="font-bold text-yellow-900">⚠️ Danger Zone</p>
+                                            <p className="text-sm text-yellow-800 mt-1">This will permanently delete all bookings</p>
+                                        </div>
+                                        <button
+                                            onClick={clearAllBookings}
+                                            className="bg-green-600 text-white px-5 py-2.5 rounded-lg hover:bg-green-700 font-medium shadow-lg"
+                                        >
+                                            🗑️ Delete All Bookings
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <h3 className="text-xl font-bold text-gray-800 mb-4">All Parent Bookings</h3>
+                                <div className="grid md:grid-cols-2 gap-4">
+                                    {Object.values(
+                                        bookings.reduce((acc, b) => {
+                                            if (!acc[b.parentEmail]) {
+                                                acc[b.parentEmail] = {
+                                                    parentName: b.parentName,
+                                                    parentEmail: b.parentEmail,
+                                                    studentName: b.studentName,
+                                                    bookings: []
+                                                };
+                                            }
+                                            acc[b.parentEmail].bookings.push(b);
+                                            return acc;
+                                        }, {})
+                                    ).map(parent => (
+                                        <div key={parent.parentEmail} className="bg-white p-6 rounded-lg shadow-md border-l-4 border-green-500">
+                                            <div className="mb-3">
+                                                <div className="font-semibold text-lg text-gray-800">{parent.parentName}</div>
+                                                <div className="text-sm text-gray-600">{parent.parentEmail}</div>
+                                                <div className="text-sm text-gray-700 mt-1">Student: <span className="font-medium">{parent.studentName}</span></div>
+                                                <div className="mt-2">
+                                                    <span className="inline-block px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">
+                                                        {parent.bookings.length} {parent.bookings.length === 1 ? 'booking' : 'bookings'}
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            {parent.bookings
+                                                .sort((a, b) => a.timeSlot.localeCompare(b.timeSlot))
+                                                .map(b => {
+                                                    const endTime = new Date(`2025-01-23T${b.timeSlot}`);
+                                                    endTime.setMinutes(endTime.getMinutes() + SLOT_DURATION);
+                                                    const endStr = endTime.toTimeString().substring(0, 5);
+                                                    return (
+                                                        <div key={b.id} className="border-l-4 border-green-400 pl-3 py-1.5 mb-2 bg-green-50 rounded text-sm">
+                                                            <span className="font-medium">{b.teacherName}</span> ({b.yearGroup}) - {b.timeSlot} - {endStr}
+                                                        </div>
+                                                    );
+                                                })}
+
+                                            <button
+                                                onClick={() => generateParentPDF(parent.parentEmail)}
+                                                className="mt-3 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 w-full font-medium shadow-md"
+                                            >
+                                                📄 Download PDF Schedule
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Footer */}
+                    <footer className="text-center text-gray-600 text-sm mt-8 mb-4">
+                        <p>Made with ❤️ by Milica Petkovic</p>
+                    </footer>
+                </div>
+            );
+        };
+
+        ReactDOM.render(<PTMBookingSystem />, document.getElementById('root'));
+    </script>
+</body>
+
+</html>
