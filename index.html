@@ -430,8 +430,8 @@
                                 <button
                                     onClick={() => setView('home')}
                                     className={`px-6 py-2.5 rounded-lg font-medium transition-all ${view === 'home' || view === 'teachers' || view === 'booking'
-                                            ? 'bg-green-600 text-white shadow-lg hover:bg-green-700'
-                                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                        ? 'bg-green-600 text-white shadow-lg hover:bg-green-700'
+                                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                                         }`}
                                 >
                                     📚 Parent Booking
@@ -439,30 +439,30 @@
                                 <button
                                     onClick={() => setView(teacherLoggedIn ? 'teacher-view' : 'teacher-login')}
                                     className={`px-6 py-2.5 rounded-lg font-medium transition-all ${view === 'teacher-view'
-                                            ? 'bg-green-600 text-white shadow-lg hover:bg-green-700'
-                                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                        ? 'bg-green-600 text-white shadow-lg hover:bg-green-700'
+                                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                                         }`}
 
                                 >
 
-                                <button
-  onClick={() => {
-    setTeacherLoggedIn(false);
-    setTeacherPassword('');
-    setView('home');
-  }}
-  className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 font-medium"
->
-  🚪 Logout
-</button>
+                                    <button
+                                        onClick={() => {
+                                            setTeacherLoggedIn(false);
+                                            setTeacherPassword('');
+                                            setView('home');
+                                        }}
+                                        className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 font-medium"
+                                    >
+                                        🚪 Logout
+                                    </button>
 
                                     👨‍🏫 Teacher View
                                 </button>
                                 <button
                                     onClick={() => setView('admin-login')}
                                     className={`px-6 py-2.5 rounded-lg font-medium transition-all ${view === 'admin-view' || view === 'admin-login'
-                                            ? 'bg-green-600 text-white shadow-lg hover:bg-green-700'
-                                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                        ? 'bg-green-600 text-white shadow-lg hover:bg-green-700'
+                                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                                         }`}
                                 >
                                     🔐 Admin View
@@ -522,8 +522,8 @@
                                                         <p className="text-gray-600 mt-1">{teacher.subject}</p>
                                                         <div className="mt-3">
                                                             <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${availableSlots > 5 ? 'bg-green-100 text-green-800' :
-                                                                    availableSlots > 0 ? 'bg-yellow-100 text-yellow-800' :
-                                                                        'bg-red-100 text-red-800'
+                                                                availableSlots > 0 ? 'bg-yellow-100 text-yellow-800' :
+                                                                    'bg-red-100 text-red-800'
                                                                 }`}>
                                                                 {availableSlots} slots available
                                                             </span>
@@ -643,12 +643,12 @@
                                                     onClick={() => handleBooking(slot)}
                                                     disabled={booked || parentBusy || alreadyBooked}
                                                     className={`p-4 rounded-lg text-sm font-medium transition-all ${booked
-                                                            ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                                                            : parentBusy
-                                                                ? 'bg-yellow-100 text-yellow-800 cursor-not-allowed border-2 border-yellow-400'
-                                                                : alreadyBooked
-                                                                    ? 'bg-red-100 text-red-800 cursor-not-allowed border-2 border-red-400'
-                                                                    : 'bg-green-100 text-green-800 hover:bg-green-200 hover:shadow-lg border-2 border-green-400'
+                                                        ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                                                        : parentBusy
+                                                            ? 'bg-yellow-100 text-yellow-800 cursor-not-allowed border-2 border-yellow-400'
+                                                            : alreadyBooked
+                                                                ? 'bg-red-100 text-red-800 cursor-not-allowed border-2 border-red-400'
+                                                                : 'bg-green-100 text-green-800 hover:bg-green-200 hover:shadow-lg border-2 border-green-400'
                                                         }`}
                                                 >
                                                     <div className="font-bold">{slot} - {endStr}</div>
