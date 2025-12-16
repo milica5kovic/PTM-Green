@@ -211,6 +211,9 @@
                 ],
             };
 
+
+
+
             const generateTimeSlots = () => {
                 const slots = [];
                 let current = new Date(`2025-01-23T${START_TIME}`);
@@ -240,6 +243,23 @@
             const isSlotBooked = (teacherId, timeSlot) => bookings.some(b => b.teacherId === teacherId && b.timeSlot === timeSlot);
             const isParentBusy = (email, timeSlot) => bookings.some(b => b.parentEmail === email && b.timeSlot === timeSlot);
             const hasParentBookedTeacher = (email, teacherId) => bookings.some(b => b.parentEmail === email && b.teacherId === teacherId);
+
+
+            const getNextAvailableSlot = (teacherId) => {
+                const teacherBookings = bookings
+                    .filter(b => b.teacherId === teacherId)
+                    .map(b => b.timeSlot)
+                    .sort();
+
+                if (teacherBookings.length === 0) {
+                    return timeSlots[0];
+                }
+
+                const lastBookedSlot = teacherBookings[teacherBookings.length - 1];
+                const lastIndex = timeSlots.indexOf(lastBookedSlot);
+
+                return timeSlots[lastIndex + 1] || null;
+            };
 
             const validateEmail = (email) => {
                 return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -635,26 +655,42 @@
                                             const endStr = endTime.toTimeString().substring(0, 5);
                                             const booked = isSlotBooked(selectedTeacher.id, slot);
                                             const parentBusy = parentEmail && isParentBusy(parentEmail.trim().toLowerCase(), slot);
+                                            const nextSlot = getNextAvailableSlot(selectedTeacher.id);
+                                            const isCorrectSlot = slot === nextSlot;
+
                                             const alreadyBooked = parentEmail && hasParentBookedTeacher(parentEmail.trim().toLowerCase(), selectedTeacher.id);
 
                                             return (
                                                 <button
                                                     key={slot}
                                                     onClick={() => handleBooking(slot)}
-                                                    disabled={booked || parentBusy || alreadyBooked}
+                                                    disabled={
+                                                        booked ||
+                                                        parentBusy ||
+                                                        alreadyBooked ||
+                                                        !isCorrectSlot
+                                                    }
                                                     className={`p-4 rounded-lg text-sm font-medium transition-all ${booked
                                                         ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                                                        : parentBusy
-                                                            ? 'bg-yellow-100 text-yellow-800 cursor-not-allowed border-2 border-yellow-400'
-                                                            : alreadyBooked
-                                                                ? 'bg-red-100 text-red-800 cursor-not-allowed border-2 border-red-400'
-                                                                : 'bg-green-100 text-green-800 hover:bg-green-200 hover:shadow-lg border-2 border-green-400'
+                                                        : !isCorrectSlot
+                                                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-2 border-gray-300'
+                                                            : parentBusy
+                                                                ? 'bg-yellow-100 text-yellow-800 cursor-not-allowed border-2 border-yellow-400'
+                                                                : alreadyBooked
+                                                                    ? 'bg-red-100 text-red-800 cursor-not-allowed border-2 border-red-400'
+                                                                    : 'bg-green-100 text-green-800 hover:bg-green-200 hover:shadow-lg border-2 border-green-400'
                                                         }`}
+
                                                 >
                                                     <div className="font-bold">{slot} - {endStr}</div>
                                                     {booked && <div className="text-xs mt-1">Booked</div>}
                                                     {parentBusy && <div className="text-xs mt-1">⚠️ Conflict</div>}
                                                     {alreadyBooked && <div className="text-xs mt-1">✓ Already booked</div>}
+                                                    {!isCorrectSlot && !booked && (
+                                                        <div className="text-xs mt-1 text-gray-500">
+                                                            Next available
+                                                        </div>
+                                                    )}
                                                     {!booked && !parentBusy && !alreadyBooked && <div className="text-xs mt-1">Available</div>}
                                                 </button>
                                             );
