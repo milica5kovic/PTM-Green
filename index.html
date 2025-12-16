@@ -49,6 +49,9 @@
             const [studentName, setStudentName] = useState('');
             const [adminLoggedIn, setAdminLoggedIn] = useState(false);
             const [adminPassword, setAdminPassword] = useState('');
+            const [teacherLoggedIn, setTeacherLoggedIn] = useState(false);
+            const [teacherPassword, setTeacherPassword] = useState('');
+
 
             const PTM_DATE = '23rd January 2025';
             const START_TIME = '16:00';
@@ -421,36 +424,46 @@
                                     📅 {PTM_DATE} | ⏰ 4:00 PM - 6:45 PM
                                 </p>
                             </div>
-                            
+
                             {/* Navigation Buttons */}
                             <div className="flex flex-wrap justify-center gap-3 mt-6">
                                 <button
                                     onClick={() => setView('home')}
-                                    className={`px-6 py-2.5 rounded-lg font-medium transition-all ${
-                                        view === 'home' || view === 'teachers' || view === 'booking'
+                                    className={`px-6 py-2.5 rounded-lg font-medium transition-all ${view === 'home' || view === 'teachers' || view === 'booking'
                                             ? 'bg-green-600 text-white shadow-lg hover:bg-green-700'
                                             : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                                    }`}
+                                        }`}
                                 >
                                     📚 Parent Booking
                                 </button>
                                 <button
-                                    onClick={() => setView('teacher-view')}
-                                    className={`px-6 py-2.5 rounded-lg font-medium transition-all ${
-                                        view === 'teacher-view'
+                                    onClick={() => setView(teacherLoggedIn ? 'teacher-view' : 'teacher-login')}
+                                    className={`px-6 py-2.5 rounded-lg font-medium transition-all ${view === 'teacher-view'
                                             ? 'bg-green-600 text-white shadow-lg hover:bg-green-700'
                                             : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                                    }`}
+                                        }`}
+
                                 >
+
+                                <button
+  onClick={() => {
+    setTeacherLoggedIn(false);
+    setTeacherPassword('');
+    setView('home');
+  }}
+  className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 font-medium"
+>
+  🚪 Logout
+</button>
+
                                     👨‍🏫 Teacher View
                                 </button>
                                 <button
                                     onClick={() => setView('admin-login')}
-                                    className={`px-6 py-2.5 rounded-lg font-medium transition-all ${
-                                        view === 'admin-view' || view === 'admin-login'
+                                    className={`px-6 py-2.5 rounded-lg font-medium transition-all ${view === 'admin-view' || view === 'admin-login'
                                             ? 'bg-green-600 text-white shadow-lg hover:bg-green-700'
                                             : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                                    }`}
+                                        }`}
                                 >
                                     🔐 Admin View
                                 </button>
@@ -500,19 +513,18 @@
                                         const teacherBookingsCount = bookings.filter(b => b.teacherId === teacher.id).length;
                                         const totalSlots = timeSlots.length;
                                         const availableSlots = totalSlots - teacherBookingsCount;
-                                        
+
                                         return (
-                                                                                            <div key={teacher.id} className="bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition-all border-l-4 border-green-500">
+                                            <div key={teacher.id} className="bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition-all border-l-4 border-green-500">
                                                 <div className="flex justify-between items-start">
                                                     <div className="flex-1">
                                                         <h3 className="text-xl font-semibold text-gray-800">{teacher.name}</h3>
                                                         <p className="text-gray-600 mt-1">{teacher.subject}</p>
                                                         <div className="mt-3">
-                                                            <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
-                                                                availableSlots > 5 ? 'bg-green-100 text-green-800' :
-                                                                availableSlots > 0 ? 'bg-yellow-100 text-yellow-800' :
-                                                                'bg-red-100 text-red-800'
-                                                            }`}>
+                                                            <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${availableSlots > 5 ? 'bg-green-100 text-green-800' :
+                                                                    availableSlots > 0 ? 'bg-yellow-100 text-yellow-800' :
+                                                                        'bg-red-100 text-red-800'
+                                                                }`}>
                                                                 {availableSlots} slots available
                                                             </span>
                                                         </div>
@@ -543,7 +555,7 @@
                                 >
                                     ← Back to Teachers
                                 </button>
-                                
+
                                 {/* Teacher Info Card */}
                                 <div className="bg-white p-6 rounded-lg shadow-lg mb-6 border-l-4 border-green-600">
                                     <h2 className="text-2xl font-bold text-green-900">{selectedTeacher.name}</h2>
@@ -630,15 +642,14 @@
                                                     key={slot}
                                                     onClick={() => handleBooking(slot)}
                                                     disabled={booked || parentBusy || alreadyBooked}
-                                                    className={`p-4 rounded-lg text-sm font-medium transition-all ${
-                                                        booked
+                                                    className={`p-4 rounded-lg text-sm font-medium transition-all ${booked
                                                             ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
                                                             : parentBusy
-                                                            ? 'bg-yellow-100 text-yellow-800 cursor-not-allowed border-2 border-yellow-400'
-                                                            : alreadyBooked
-                                                            ? 'bg-red-100 text-red-800 cursor-not-allowed border-2 border-red-400'
-                                                            : 'bg-green-100 text-green-800 hover:bg-green-200 hover:shadow-lg border-2 border-green-400'
-                                                    }`}
+                                                                ? 'bg-yellow-100 text-yellow-800 cursor-not-allowed border-2 border-yellow-400'
+                                                                : alreadyBooked
+                                                                    ? 'bg-red-100 text-red-800 cursor-not-allowed border-2 border-red-400'
+                                                                    : 'bg-green-100 text-green-800 hover:bg-green-200 hover:shadow-lg border-2 border-green-400'
+                                                        }`}
                                                 >
                                                     <div className="font-bold">{slot} - {endStr}</div>
                                                     {booked && <div className="text-xs mt-1">Booked</div>}
@@ -692,9 +703,56 @@
                                 </button>
                             </div>
                         )}
+                        {/* Teacher Login */}
+                        {view === 'teacher-login' && !teacherLoggedIn && (
+                            <div className="max-w-md mx-auto bg-white p-8 rounded-lg shadow-xl border-t-4 border-green-600">
+                                <h2 className="text-2xl font-bold text-green-900 mb-6 text-center">
+                                    👨‍🏫 Teacher Login
+                                </h2>
+
+                                <div className="mb-6">
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Password
+                                    </label>
+                                    <input
+                                        type="password"
+                                        placeholder="Enter teacher password"
+                                        value={teacherPassword}
+                                        onChange={(e) => setTeacherPassword(e.target.value)}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter') {
+                                                if (teacherPassword === 'Teacher123!') {
+                                                    setTeacherLoggedIn(true);
+                                                    setView('teacher-view');
+                                                } else {
+                                                    alert('❌ Incorrect password');
+                                                }
+                                            }
+                                        }}
+                                        className="w-full border-2 border-gray-300 rounded-lg px-4 py-3 focus:border-green-500 focus:outline-none"
+                                    />
+                                </div>
+
+                                <button
+                                    onClick={() => {
+                                        if (teacherPassword === 'Teacher123!') {
+                                            setTeacherLoggedIn(true);
+                                            setView('teacher-view');
+                                        } else {
+                                            alert('❌ Incorrect password');
+                                        }
+                                    }}
+                                    className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 w-full font-medium text-lg shadow-lg"
+                                >
+                                    Login
+                                </button>
+                            </div>
+                        )}
+
 
                         {/* Teacher View */}
-                        {view === 'teacher-view' && (
+                        {view === 'teacher-view' && teacherLoggedIn && (
+
                             <div>
                                 <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
                                     <h2 className="text-2xl font-bold text-green-900">Teacher Schedules</h2>
