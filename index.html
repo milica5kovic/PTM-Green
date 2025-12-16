@@ -269,6 +269,13 @@
                 const trimmedName = parentName.trim();
                 const trimmedEmail = parentEmail.trim().toLowerCase();
                 const trimmedStudent = studentName.trim();
+                const nextSlot = getNextAvailableSlot(selectedTeacher.id);
+
+                if (timeSlot !== nextSlot) {
+                    alert('⚠️ Appointments must be booked consecutively to avoid schedule gaps.');
+                    return;
+                }
+
 
                 if (!trimmedName || !trimmedEmail || !trimmedStudent) {
                     alert('⚠️ Please fill in all details');
@@ -691,7 +698,10 @@
                                                             Next available
                                                         </div>
                                                     )}
-                                                    {!booked && !parentBusy && !alreadyBooked && <div className="text-xs mt-1">Available</div>}
+                                                    {isCorrectSlot && !booked && !parentBusy && !alreadyBooked && (
+                                                        <div className="text-xs mt-1">Available</div>
+                                                    )}
+
                                                 </button>
                                             );
                                         })}
