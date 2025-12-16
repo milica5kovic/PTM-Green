@@ -297,10 +297,10 @@
                     return;
                 }
 
-                if (hasParentBookedTeacher(trimmedEmail, selectedTeacher.id)) {
-                    alert('⚠️ You have already booked a meeting with this teacher');
-                    return;
-                }
+                // if (hasParentBookedTeacher(trimmedEmail, selectedTeacher.id)) {
+                //     alert('⚠️ You have already booked a meeting with this teacher');
+                //     return;
+                // }
 
                 const endTime = new Date(`2025-01-23T${timeSlot}`);
                 endTime.setMinutes(endTime.getMinutes() + SLOT_DURATION);
@@ -674,7 +674,7 @@
                                                     disabled={
                                                         booked ||
                                                         parentBusy ||
-                                                        alreadyBooked ||
+                                        
                                                         !isCorrectSlot
                                                     }
                                                     className={`p-4 rounded-lg text-sm font-medium transition-all ${booked
