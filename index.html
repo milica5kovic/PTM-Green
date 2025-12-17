@@ -246,20 +246,18 @@
 
 
             const getNextAvailableSlot = (teacherId) => {
-                const teacherBookings = bookings
+                const bookedSlots = bookings
                     .filter(b => b.teacherId === teacherId)
-                    .map(b => b.timeSlot)
-                    .sort();
+                    .map(b => b.timeSlot);
 
-                if (teacherBookings.length === 0) {
-                    return timeSlots[0];
+                for (let slot of timeSlots) {
+                    if (!bookedSlots.includes(slot)) {
+                        return slot; // PRVI slobodan slot
+                    }
                 }
 
-                const lastBookedSlot = teacherBookings[teacherBookings.length - 1];
-                const lastIndex = timeSlots.indexOf(lastBookedSlot);
-
-                return timeSlots[lastIndex + 1] || null;
-            };
+                return null; // sve popunjeno
+            }
 
             const validateEmail = (email) => {
                 return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -297,10 +295,7 @@
                     return;
                 }
 
-                // if (hasParentBookedTeacher(trimmedEmail, selectedTeacher.id)) {
-                //     alert('⚠️ You have already booked a meeting with this teacher');
-                //     return;
-                // }
+
 
                 const endTime = new Date(`2025-01-23T${timeSlot}`);
                 endTime.setMinutes(endTime.getMinutes() + SLOT_DURATION);
@@ -665,8 +660,7 @@
                                             const nextSlot = getNextAvailableSlot(selectedTeacher.id);
                                             const isCorrectSlot = slot === nextSlot;
 
-                                            const alreadyBooked = parentEmail && hasParentBookedTeacher(parentEmail.trim().toLowerCase(), selectedTeacher.id);
-
+                                            
                                             return (
                                                 <button
                                                     key={slot}
@@ -674,7 +668,7 @@
                                                     disabled={
                                                         booked ||
                                                         parentBusy ||
-                                        
+
                                                         !isCorrectSlot
                                                     }
                                                     className={`p-4 rounded-lg text-sm font-medium transition-all ${booked
@@ -698,7 +692,7 @@
                                                             Next available
                                                         </div>
                                                     )}
-                                                    {isCorrectSlot && !booked && !parentBusy && !alreadyBooked && (
+                                                    {isCorrectSlot && !booked && !parentBusy && (
                                                         <div className="text-xs mt-1">Available</div>
                                                     )}
 
