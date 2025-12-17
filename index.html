@@ -51,12 +51,20 @@
             const [adminPassword, setAdminPassword] = useState('');
             const [teacherLoggedIn, setTeacherLoggedIn] = useState(false);
             const [teacherPassword, setTeacherPassword] = useState('');
+            const [ptmSettings, setPtmSettings] = useState({
+                date: '23rd January 2025',
+                startTime: '16:00',
+                endTime: '18:45',
+                slotDuration: 10
+            });
+            const [editingSettings, setEditingSettings] = useState(false);
+            const [tempSettings, setTempSettings] = useState({ ...ptmSettings });
 
 
-            const PTM_DATE = '23rd January 2025';
-            const START_TIME = '16:00';
-            const END_TIME = '18:45';
-            const SLOT_DURATION = 10;
+            const PTM_DATE = ptmSettings.date;
+            const START_TIME = ptmSettings.startTime;
+            const END_TIME = ptmSettings.endTime;
+            const SLOT_DURATION = ptmSettings.slotDuration;
 
             const yearGroups = [
                 { id: 'Y1', name: 'Year 1' },
@@ -227,7 +235,11 @@
                 return slots;
             };
 
-            const timeSlots = generateTimeSlots();
+            const [timeSlots, setTimeSlots] = useState([]);
+
+            useEffect(() => {
+                setTimeSlots(generateTimeSlots());
+            }, [ptmSettings.startTime, ptmSettings.endTime, ptmSettings.slotDuration]);
 
             const saveBooking = async (newBooking) => {
                 try {
@@ -404,7 +416,11 @@
 
             useEffect(() => {
                 fetchBookings();
+                fetchSettings();
             }, []);
+            useEffect(() => {
+                window.scrollTo(0, 0);
+            }, [view]);
 
             const clearAllBookings = async () => {
                 if (!window.confirm("⚠️ Are you sure you want to delete ALL bookings? This cannot be undone!")) return;
@@ -421,6 +437,41 @@
                     alert("❌ Error clearing bookings. Please try again.");
                 }
             };
+            const fetchSettings = async () => {
+                try {
+                    const { collection, getDocs } = window.firestore;
+                    const querySnapshot = await getDocs(collection(window.db, 'settings'));
+                    if (!querySnapshot.empty) {
+                        const settingsDoc = querySnapshot.docs[0].data();
+                        setPtmSettings(settingsDoc);
+                        setTempSettings(settingsDoc);
+                    }
+                } catch (err) {
+                    console.error("Error fetching settings:", err);
+                }
+            };
+
+            const saveSettings = async () => {
+                try {
+                    const { collection, getDocs, addDoc, doc, deleteDoc, writeBatch } = window.firestore;
+
+                    // Delete existing settings
+                    const snapshot = await getDocs(collection(window.db, 'settings'));
+                    const batch = writeBatch(window.db);
+                    snapshot.docs.forEach(docSnap => batch.delete(doc(window.db, 'settings', docSnap.id)));
+                    await batch.commit();
+
+                    // Add new settings
+                    await addDoc(collection(window.db, 'settings'), tempSettings);
+                    setPtmSettings(tempSettings);
+                    setEditingSettings(false);
+                    alert("✅ PTM settings updated successfully!");
+                } catch (err) {
+                    console.error("Error saving settings:", err);
+                    alert("❌ Error saving settings. Please try again.");
+                }
+            };
+
 
             const generateParentPDF = (emailToGenerate) => {
                 const { jsPDF } = window.jspdf;
@@ -542,7 +593,7 @@
                             </div>
                             <div className="text-center">
                                 <p className="text-gray-700 font-medium">
-                                    📅 {PTM_DATE} | ⏰ 4:00 PM - 6:45 PM
+                                    📅 {PTM_DATE} |  {START_TIME} - {END_TIME}
                                 </p>
                             </div>
 
@@ -957,6 +1008,102 @@
                                             🚪 Logout
                                         </button>
                                     </div>
+                                </div>
+                                {/* PTM Settings Card */}
+                                <div className="bg-white rounded-lg shadow-lg p-6 mb-6 border-l-4 border-blue-500">
+                                    <div className="flex justify-between items-center mb-4">
+                                        <h3 className="text-xl font-bold text-gray-800">⚙️ PTM Settings</h3>
+                                        {!editingSettings && (
+                                            <button
+                                                onClick={() => setEditingSettings(true)}
+                                                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-medium"
+                                            >
+                                                ✏️ Edit Settings
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    {editingSettings ? (
+                                        <div>
+                                            <div className="grid md:grid-cols-2 gap-4 mb-4">
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-2">PTM Date</label>
+                                                    <input
+                                                        type="text"
+                                                        placeholder="e.g., 23rd January 2025"
+                                                        value={tempSettings.date}
+                                                        onChange={(e) => setTempSettings({ ...tempSettings, date: e.target.value })}
+                                                        className="w-full border-2 border-gray-300 rounded-lg px-4 py-2 focus:border-blue-500 focus:outline-none"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-2">Slot Duration (minutes)</label>
+                                                    <input
+                                                        type="number"
+                                                        min="5"
+                                                        max="30"
+                                                        value={tempSettings.slotDuration}
+                                                        onChange={(e) => setTempSettings({ ...tempSettings, slotDuration: parseInt(e.target.value) })}
+                                                        className="w-full border-2 border-gray-300 rounded-lg px-4 py-2 focus:border-blue-500 focus:outline-none"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-2">Start Time (HH:MM)</label>
+                                                    <input
+                                                        type="time"
+                                                        value={tempSettings.startTime}
+                                                        onChange={(e) => setTempSettings({ ...tempSettings, startTime: e.target.value })}
+                                                        className="w-full border-2 border-gray-300 rounded-lg px-4 py-2 focus:border-blue-500 focus:outline-none"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-2">End Time (HH:MM)</label>
+                                                    <input
+                                                        type="time"
+                                                        value={tempSettings.endTime}
+                                                        onChange={(e) => setTempSettings({ ...tempSettings, endTime: e.target.value })}
+                                                        className="w-full border-2 border-gray-300 rounded-lg px-4 py-2 focus:border-blue-500 focus:outline-none"
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div className="flex gap-3">
+                                                <button
+                                                    onClick={saveSettings}
+                                                    className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 font-medium"
+                                                >
+                                                    💾 Save Settings
+                                                </button>
+                                                <button
+                                                    onClick={() => {
+                                                        setTempSettings({ ...ptmSettings });
+                                                        setEditingSettings(false);
+                                                    }}
+                                                    className="bg-gray-400 text-white px-6 py-2 rounded-lg hover:bg-gray-500 font-medium"
+                                                >
+                                                    Cancel
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="grid md:grid-cols-2 gap-4 text-sm">
+                                            <div>
+                                                <span className="font-semibold text-gray-700">Date:</span>
+                                                <span className="ml-2 text-gray-600">{ptmSettings.date}</span>
+                                            </div>
+                                            <div>
+                                                <span className="font-semibold text-gray-700">Time:</span>
+                                                <span className="ml-2 text-gray-600">{ptmSettings.startTime} - {ptmSettings.endTime}</span>
+                                            </div>
+                                            <div>
+                                                <span className="font-semibold text-gray-700">Slot Duration:</span>
+                                                <span className="ml-2 text-gray-600">{ptmSettings.slotDuration} minutes</span>
+                                            </div>
+                                            <div>
+                                                <span className="font-semibold text-gray-700">Total Slots:</span>
+                                                <span className="ml-2 text-gray-600">{timeSlots.length} slots</span>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
 
                                 <div className="bg-yellow-50 border-2 border-yellow-400 rounded-lg p-4 mb-6">
