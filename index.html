@@ -243,22 +243,101 @@
             const isSlotBooked = (teacherId, timeSlot) => bookings.some(b => b.teacherId === teacherId && b.timeSlot === timeSlot);
             const isParentBusy = (email, timeSlot) => bookings.some(b => b.parentEmail === email && b.timeSlot === timeSlot);
             const hasParentBookedTeacher = (email, teacherId) => bookings.some(b => b.parentEmail === email && b.teacherId === teacherId);
+            const getValidSlotsForParent = (parentEmail, teacherId) => {
+                // Svi termini ovog roditelja
+                const parentSlots = bookings
+                    .filter(b => b.parentEmail === parentEmail)
+                    .map(b => b.timeSlot)
+                    .sort();
 
-
-            const getNextAvailableSlot = (teacherId) => {
-                const bookedSlots = bookings
+                // Termini ovog nastavnika
+                const teacherSlots = bookings
                     .filter(b => b.teacherId === teacherId)
                     .map(b => b.timeSlot);
 
-                for (let slot of timeSlots) {
-                    if (!bookedSlots.includes(slot)) {
-                        return slot; // PRVI slobodan slot
+                const validSlots = [];
+
+                // Ako roditelj nema nijedan termin, bilo koji slobodan slot nastavnika je OK
+                if (parentSlots.length === 0) {
+                    for (let slot of timeSlots) {
+                        if (!teacherSlots.includes(slot)) {
+                            validSlots.push(slot);
+                        }
+                    }
+                    return validSlots;
+                }
+
+                // Pronađi prvi i poslednji termin roditelja
+                const firstParentSlot = parentSlots[0];
+                const lastParentSlot = parentSlots[parentSlots.length - 1];
+                const firstIndex = timeSlots.indexOf(firstParentSlot);
+                const lastIndex = timeSlots.indexOf(lastParentSlot);
+
+                // Dozvoli slot PRE prvog termina (bez rupa)
+                for (let i = 0; i < firstIndex; i++) {
+                    const slot = timeSlots[i];
+                    if (!teacherSlots.includes(slot)) {
+                        // Proveri da nema rupe između ovog slota i prvog roditeljskog termina
+                        let hasGap = false;
+                        for (let j = i + 1; j < firstIndex; j++) {
+                            if (!parentSlots.includes(timeSlots[j])) {
+                                hasGap = true;
+                                break;
+                            }
+                        }
+                        if (!hasGap || i === firstIndex - 1) {
+                            validSlots.push(slot);
+                        }
                     }
                 }
 
-                return null; // sve popunjeno
+                // Dozvoli slot POSLE poslednjeg termina (bez rupa)
+                const nextAfterLast = timeSlots[lastIndex + 1];
+                if (nextAfterLast && !teacherSlots.includes(nextAfterLast)) {
+                    validSlots.push(nextAfterLast);
+                }
+
+                // Dozvoli slotove IZMEĐU roditeljskih termina (ako popunjavaju rupu)
+                for (let i = firstIndex; i <= lastIndex; i++) {
+                    const slot = timeSlots[i];
+                    if (!parentSlots.includes(slot) && !teacherSlots.includes(slot)) {
+                        validSlots.push(slot);
+                    }
+                }
+
+                return validSlots;
             }
 
+            // const getNextAvailableSlot = (teacherId, parentEmail) => {
+            //     // Pronađi sve termine ovog nastavnika
+            //     const teacherBookings = bookings
+            //         .filter(b => b.teacherId === teacherId)
+            //         .map(b => b.timeSlot)
+            //         .sort();
+
+            //     // Ako nastavnik nema nijedan termin, vrati prvi slobodan termin za roditelja
+            //     if (teacherBookings.length === 0) {
+            //         // Pronađi sve termine ovog roditelja
+            //         const parentBookings = bookings
+            //             .filter(b => b.parentEmail === parentEmail)
+            //             .map(b => b.timeSlot)
+            //             .sort();
+
+            //         if (parentBookings.length === 0) {
+            //             return timeSlots[0]; // Prvi termin uopšte
+            //         }
+
+            //         // Vrati sledeći slot odmah posle poslednjeg roditeljskog termina
+            //         const lastParentSlot = parentBookings[parentBookings.length - 1];
+            //         const lastIndex = timeSlots.indexOf(lastParentSlot);
+            //         return timeSlots[lastIndex + 1] || null;
+            //     }
+
+            //     // Ako nastavnik ima termine, vrati sledeći odmah posle poslednjeg
+            //     const lastBookedSlot = teacherBookings[teacherBookings.length - 1];
+            //     const lastIndex = timeSlots.indexOf(lastBookedSlot);
+            //     return timeSlots[lastIndex + 1] || null;
+            // }
             const validateEmail = (email) => {
                 return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
             };
@@ -267,18 +346,14 @@
                 const trimmedName = parentName.trim();
                 const trimmedEmail = parentEmail.trim().toLowerCase();
                 const trimmedStudent = studentName.trim();
-                const myTeacherBookings = bookings.filter(
-                    b =>
-                        b.teacherId === selectedTeacher.id &&
-                        b.parentEmail === trimmedEmail
-                );
-
-                if (myTeacherBookings.length > 0) {
-                    const nextSlot = getNextAvailableSlot(selectedTeacher.id);
-                    if (timeSlot !== nextSlot) {
-                        alert('⚠️ Appointments with the same teacher must be booked consecutively.');
-                        return;
+                const validSlots = getValidSlotsForParent(trimmedEmail, selectedTeacher.id);
+                if (!validSlots.includes(timeSlot)) {
+                    if (validSlots.length > 0) {
+                        alert('⚠️ Dostupni termini za ovog nastavnika: ' + validSlots.join(', ') + '\n\nMorate zakazati bez praznina u rasporedu!');
+                    } else {
+                        alert('⚠️ Ovaj nastavnik nema dostupne termine koji ne prave praznine u vašem rasporedu.');
                     }
+                    return;
                 }
 
 
@@ -301,6 +376,10 @@
                     alert('⚠️ You already have a meeting at this time with another teacher');
                     return;
                 }
+                // if (timeSlot !== nextSlot) {
+                //     alert('⚠️ Termini moraju biti zakazani redom bez praznina.\nSledeći dostupan termin za ovog nastavnika je: ' + nextSlot + '\n\nAppointments must be booked consecutively without gaps.');
+                //     return;
+                // }
 
 
 
@@ -395,32 +474,57 @@
                 doc.save(`${parentName.replace(/\s+/g, '_')}_PTM_Schedule.pdf`);
             };
 
-            const downloadTeacherSchedule = (teacherName) => {
-                const teacherBookings = bookings.filter(b => b.teacherName === teacherName);
+            const downloadTeacherSchedule = (teacherName, teacherId) => {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
 
-                let content = `Parent Teacher Meeting Schedule\n`;
-                content += `Teacher: ${teacherName}\n`;
-                content += `Date: ${PTM_DATE}\n`;
-                content += `Total Bookings: ${teacherBookings.length}\n\n`;
-                content += `Time Slot\t\tYear Group\tParent Name\t\tStudent Name\t\tEmail\n`;
-                content += `${'='.repeat(100)}\n`;
+                const teacherBookings = bookings
+                    .filter(b => b.teacherId === teacherId)
+                    .sort((a, b) => a.timeSlot.localeCompare(b.timeSlot));
 
-                timeSlots.forEach(slot => {
-                    const booking = teacherBookings.find(b => b.timeSlot === slot);
-                    if (booking) {
-                        const endTime = new Date(`2025-01-23T${slot}`);
-                        endTime.setMinutes(endTime.getMinutes() + SLOT_DURATION);
-                        const endStr = endTime.toTimeString().substring(0, 5);
-                        content += `${slot} - ${endStr}\t${booking.yearGroup}\t\t${booking.parentName}\t\t${booking.studentName}\t\t${booking.parentEmail}\n`;
+                // Header
+                doc.setFontSize(18);
+                doc.setTextColor(34, 197, 94);
+                doc.text("Teacher Schedule - Parent Teacher Meeting", 20, 20);
+
+                doc.setFontSize(12);
+                doc.setTextColor(0, 0, 0);
+                doc.text(`Teacher: ${teacherName}`, 20, 30);
+                doc.text(`Date: ${PTM_DATE}`, 20, 37);
+                doc.text(`Total Bookings: ${teacherBookings.length}`, 20, 44);
+
+                // Table data
+                const tableData = teacherBookings.map(b => {
+                    const endTime = new Date(`2025-01-23T${b.timeSlot}`);
+                    endTime.setMinutes(endTime.getMinutes() + SLOT_DURATION);
+                    const endStr = endTime.toTimeString().substring(0, 5);
+                    return [
+                        `${b.timeSlot} - ${endStr}`,
+                        b.yearGroup,
+                        b.parentName,
+                        b.studentName,
+                        b.parentEmail
+                    ];
+                });
+
+                // Generate table
+                doc.autoTable({
+                    startY: 55,
+                    head: [['Time', 'Year', 'Parent Name', 'Student Name', 'Email']],
+                    body: tableData,
+                    theme: 'grid',
+                    headStyles: { fillColor: [34, 197, 94], textColor: 255 },
+                    styles: { fontSize: 9 },
+                    columnStyles: {
+                        0: { cellWidth: 30 },
+                        1: { cellWidth: 20 },
+                        2: { cellWidth: 35 },
+                        3: { cellWidth: 35 },
+                        4: { cellWidth: 50 }
                     }
                 });
 
-                const blob = new Blob([content], { type: 'text/plain' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `${teacherName.replace(/\s+/g, '_')}_schedule.txt`;
-                a.click();
+                doc.save(`${teacherName.replace(/\s+/g, '_')}_PTM_Schedule.pdf`);
             };
 
             const getMyBookings = () => {
@@ -664,42 +768,29 @@
                                             const endStr = endTime.toTimeString().substring(0, 5);
                                             const booked = isSlotBooked(selectedTeacher.id, slot);
                                             const parentBusy = parentEmail && isParentBusy(parentEmail.trim().toLowerCase(), slot);
-                                            const nextSlot = getNextAvailableSlot(selectedTeacher.id);
-                                            const isCorrectSlot = slot === nextSlot;
+                                            const validSlots = parentEmail ? getValidSlotsForParent(parentEmail.trim().toLowerCase(), selectedTeacher.id) : [];
+                                            const isValidSlot = !parentEmail || validSlots.includes(slot);
 
 
                                             return (
                                                 <button
                                                     key={slot}
                                                     onClick={() => handleBooking(slot)}
-                                                    disabled={
-                                                        booked ||
-                                                        parentBusy ||
-                                                        !isCorrectSlot
-                                                    }
+                                                    disabled={booked || parentBusy || !isValidSlot}
                                                     className={`p-4 rounded-lg text-sm font-medium transition-all ${booked
                                                         ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                                                        : !isCorrectSlot
+                                                        : !isValidSlot
                                                             ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-2 border-gray-300'
                                                             : parentBusy
                                                                 ? 'bg-yellow-100 text-yellow-800 cursor-not-allowed border-2 border-yellow-400'
                                                                 : 'bg-green-100 text-green-800 hover:bg-green-200 hover:shadow-lg border-2 border-green-400'
                                                         }`}
-
                                                 >
                                                     <div className="font-bold">{slot} - {endStr}</div>
                                                     {booked && <div className="text-xs mt-1">Booked</div>}
                                                     {parentBusy && <div className="text-xs mt-1">⚠️ Conflict</div>}
-
-                                                    {!isCorrectSlot && !booked && (
-                                                        <div className="text-xs mt-1 text-gray-500">
-                                                            Next available
-                                                        </div>
-                                                    )}
-                                                    {isCorrectSlot && !booked && !parentBusy && (
-                                                        <div className="text-xs mt-1">Available</div>
-                                                    )}
-
+                                                    {!isValidSlot && !booked && <div className="text-xs mt-1 text-gray-500">Would create gap</div>}
+                                                    {isValidSlot && !booked && !parentBusy && <div className="text-xs mt-1">Available</div>}
                                                 </button>
                                             );
                                         })}
@@ -822,10 +913,10 @@
                                                             </p>
                                                         </div>
                                                         <button
-                                                            onClick={() => downloadTeacherSchedule(teacher.name)}
+                                                            onClick={() => downloadTeacherSchedule(teacher.name, teacher.id)}
                                                             className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-green-700 font-medium shadow-md"
                                                         >
-                                                            📥 Download
+                                                            📥 Download PDF
                                                         </button>
                                                     </div>
                                                     <div className="max-h-60 overflow-y-auto">
