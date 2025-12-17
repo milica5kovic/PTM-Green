@@ -267,11 +267,18 @@
                 const trimmedName = parentName.trim();
                 const trimmedEmail = parentEmail.trim().toLowerCase();
                 const trimmedStudent = studentName.trim();
-                const nextSlot = getNextAvailableSlot(selectedTeacher.id);
+                const myTeacherBookings = bookings.filter(
+                    b =>
+                        b.teacherId === selectedTeacher.id &&
+                        b.parentEmail === trimmedEmail
+                );
 
-                if (timeSlot !== nextSlot) {
-                    alert('⚠️ Appointments must be booked consecutively to avoid schedule gaps.');
-                    return;
+                if (myTeacherBookings.length > 0) {
+                    const nextSlot = getNextAvailableSlot(selectedTeacher.id);
+                    if (timeSlot !== nextSlot) {
+                        alert('⚠️ Appointments with the same teacher must be booked consecutively.');
+                        return;
+                    }
                 }
 
 
@@ -660,7 +667,7 @@
                                             const nextSlot = getNextAvailableSlot(selectedTeacher.id);
                                             const isCorrectSlot = slot === nextSlot;
 
-                                            
+
                                             return (
                                                 <button
                                                     key={slot}
@@ -668,7 +675,6 @@
                                                     disabled={
                                                         booked ||
                                                         parentBusy ||
-
                                                         !isCorrectSlot
                                                     }
                                                     className={`p-4 rounded-lg text-sm font-medium transition-all ${booked
@@ -676,15 +682,15 @@
                                                         : !isCorrectSlot
                                                             ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-2 border-gray-300'
                                                             : parentBusy
-                                                                    ? 'bg-yellow-100 text-yellow-800 cursor-not-allowed border-2 border-yellow-400'
-                                                                    : 'bg-green-100 text-green-800 hover:bg-green-200 hover:shadow-lg border-2 border-green-400'
+                                                                ? 'bg-yellow-100 text-yellow-800 cursor-not-allowed border-2 border-yellow-400'
+                                                                : 'bg-green-100 text-green-800 hover:bg-green-200 hover:shadow-lg border-2 border-green-400'
                                                         }`}
 
                                                 >
                                                     <div className="font-bold">{slot} - {endStr}</div>
                                                     {booked && <div className="text-xs mt-1">Booked</div>}
                                                     {parentBusy && <div className="text-xs mt-1">⚠️ Conflict</div>}
-                                                    
+
                                                     {!isCorrectSlot && !booked && (
                                                         <div className="text-xs mt-1 text-gray-500">
                                                             Next available
@@ -951,7 +957,9 @@
             );
         };
 
-        ReactDOM.render(<PTMBookingSystem />, document.getElementById('root'));
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<PTMBookingSystem />);
+
     </script>
 </body>
 
