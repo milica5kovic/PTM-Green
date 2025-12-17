@@ -56,7 +56,7 @@
             const PTM_DATE = '23rd January 2025';
             const START_TIME = '16:00';
             const END_TIME = '18:45';
-            const SLOT_DURATION = 15;
+            const SLOT_DURATION = 10;
 
             const yearGroups = [
                 { id: 'Y1', name: 'Year 1' },
@@ -244,70 +244,53 @@
             const isParentBusy = (email, timeSlot) => bookings.some(b => b.parentEmail === email && b.timeSlot === timeSlot);
             const hasParentBookedTeacher = (email, teacherId) => bookings.some(b => b.parentEmail === email && b.teacherId === teacherId);
             const getValidSlotsForParent = (parentEmail, teacherId) => {
-                // Svi termini ovog roditelja
-                const parentSlots = bookings
+                // Učitaj termine roditelja i nastavnika
+                const parentBookings = bookings
                     .filter(b => b.parentEmail === parentEmail)
-                    .map(b => b.timeSlot)
-                    .sort();
+                    .map(b => ({ slot: b.timeSlot, index: timeSlots.indexOf(b.timeSlot) }))
+                    .sort((a, b) => a.index - b.index); // Sort po indexu, ne po string-u!
 
-                // Termini ovog nastavnika
+                const parentSlots = parentBookings.map(b => b.slot);
+
                 const teacherSlots = bookings
                     .filter(b => b.teacherId === teacherId)
                     .map(b => b.timeSlot);
 
-                const validSlots = [];
-
-                // Ako roditelj nema nijedan termin, bilo koji slobodan slot nastavnika je OK
+                // Ako roditelj nema termine, može bilo koji slobodan slot
                 if (parentSlots.length === 0) {
-                    for (let slot of timeSlots) {
-                        if (!teacherSlots.includes(slot)) {
-                            validSlots.push(slot);
-                        }
-                    }
-                    return validSlots;
+                    return timeSlots.filter(slot => !teacherSlots.includes(slot));
                 }
 
-                // Pronađi prvi i poslednji termin roditelja
-                const firstParentSlot = parentSlots[0];
-                const lastParentSlot = parentSlots[parentSlots.length - 1];
-                const firstIndex = timeSlots.indexOf(firstParentSlot);
-                const lastIndex = timeSlots.indexOf(lastParentSlot);
+                // Roditelj ima termine
+                const validSlots = [];
+                const parentIndices = parentBookings.map(b => b.index);
 
-                // Dozvoli slot PRE prvog termina (bez rupa)
-                for (let i = 0; i < firstIndex; i++) {
+                const minIndex = Math.min(...parentIndices);
+                const maxIndex = Math.max(...parentIndices);
+
+                // Proveri svaki slot
+                for (let i = 0; i < timeSlots.length; i++) {
                     const slot = timeSlots[i];
-                    if (!teacherSlots.includes(slot)) {
-                        // Proveri da nema rupe između ovog slota i prvog roditeljskog termina
-                        let hasGap = false;
-                        for (let j = i + 1; j < firstIndex; j++) {
-                            if (!parentSlots.includes(timeSlots[j])) {
-                                hasGap = true;
-                                break;
-                            }
-                        }
-                        if (!hasGap || i === firstIndex - 1) {
-                            validSlots.push(slot);
-                        }
-                    }
-                }
 
-                // Dozvoli slot POSLE poslednjeg termina (bez rupa)
-                const nextAfterLast = timeSlots[lastIndex + 1];
-                if (nextAfterLast && !teacherSlots.includes(nextAfterLast)) {
-                    validSlots.push(nextAfterLast);
-                }
+                    // Skip ako nastavnik zauzet
+                    if (teacherSlots.includes(slot)) continue;
 
-                // Dozvoli slotove IZMEĐU roditeljskih termina (ako popunjavaju rupu)
-                for (let i = firstIndex; i <= lastIndex; i++) {
-                    const slot = timeSlots[i];
-                    if (!parentSlots.includes(slot) && !teacherSlots.includes(slot)) {
+                    // Skip ako roditelj već ima
+                    if (parentSlots.includes(slot)) continue;
+
+                    // Slot je validan ako je adjacent roditeljskim terminima
+                    const isBeforeFirst = (i === minIndex - 1);
+                    const isAfterLast = (i === maxIndex + 1);
+                    const isBetweenAndAdjacent = (i > minIndex && i < maxIndex &&
+                        (parentIndices.includes(i - 1) || parentIndices.includes(i + 1)));
+
+                    if (isBeforeFirst || isAfterLast || isBetweenAndAdjacent) {
                         validSlots.push(slot);
                     }
                 }
 
                 return validSlots;
             }
-
             // const getNextAvailableSlot = (teacherId, parentEmail) => {
             //     // Pronađi sve termine ovog nastavnika
             //     const teacherBookings = bookings
@@ -346,6 +329,14 @@
                 const trimmedName = parentName.trim();
                 const trimmedEmail = parentEmail.trim().toLowerCase();
                 const trimmedStudent = studentName.trim();
+
+                // 1. Provera praznih polja
+                if (!trimmedName || !trimmedEmail || !trimmedStudent) {
+                    alert('⚠️ Please fill in all details');
+                    return;
+                }
+
+                // 2. Provera validnog slota (bez praznina)
                 const validSlots = getValidSlotsForParent(trimmedEmail, selectedTeacher.id);
                 if (!validSlots.includes(timeSlot)) {
                     if (validSlots.length > 0) {
@@ -356,33 +347,31 @@
                     return;
                 }
 
-
-                if (!trimmedName || !trimmedEmail || !trimmedStudent) {
-                    alert('⚠️ Please fill in all details');
+                // 3. Provera da li roditelj već ima termin sa ovim nastavnikom
+                if (hasParentBookedTeacher(trimmedEmail, selectedTeacher.id)) {
+                    alert('⚠️ You have already booked a meeting with this teacher.\n\nVeć ste zakazali sastanak sa ovim nastavnikom.');
                     return;
                 }
 
+                // 4. Provera email validnosti
                 if (!validateEmail(trimmedEmail)) {
                     alert('⚠️ Please enter a valid email address');
                     return;
                 }
 
+                // 5. Provera da li je slot već zauzet
                 if (isSlotBooked(selectedTeacher.id, timeSlot)) {
                     alert('⚠️ This time slot is already booked with this teacher');
                     return;
                 }
 
+                // 6. Provera da li je roditelj zauzet u to vreme
                 if (isParentBusy(trimmedEmail, timeSlot)) {
                     alert('⚠️ You already have a meeting at this time with another teacher');
                     return;
                 }
-                // if (timeSlot !== nextSlot) {
-                //     alert('⚠️ Termini moraju biti zakazani redom bez praznina.\nSledeći dostupan termin za ovog nastavnika je: ' + nextSlot + '\n\nAppointments must be booked consecutively without gaps.');
-                //     return;
-                // }
 
-
-
+                // Sve OK, zakaži termin
                 const endTime = new Date(`2025-01-23T${timeSlot}`);
                 endTime.setMinutes(endTime.getMinutes() + SLOT_DURATION);
                 const endStr = endTime.toTimeString().substring(0, 5);
@@ -402,7 +391,6 @@
                 alert(`✅ Booking Confirmed!\n\nTeacher: ${selectedTeacher.name}\nTime: ${timeSlot} - ${endStr}\nDate: ${PTM_DATE}\n\nYou can download a PDF of all your bookings from the booking page.`);
                 setView('teachers');
             };
-
             const fetchBookings = async () => {
                 try {
                     const { collection, getDocs } = window.firestore;
