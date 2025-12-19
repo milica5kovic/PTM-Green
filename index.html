@@ -255,42 +255,43 @@
             const isSlotBooked = (teacherId, timeSlot) => bookings.some(b => b.teacherId === teacherId && b.timeSlot === timeSlot);
             const isParentBusy = (email, timeSlot) => bookings.some(b => b.parentEmail === email && b.timeSlot === timeSlot);
             const hasParentBookedTeacher = (email, teacherId) => bookings.some(b => b.parentEmail === email && b.teacherId === teacherId);
+
             const getValidSlotsForParent = (parentEmail, teacherId) => {
-                // Učitaj termine roditelja i nastavnika
+                // Get parent's bookings
                 const parentBookings = bookings
                     .filter(b => b.parentEmail === parentEmail)
                     .map(b => ({ slot: b.timeSlot, index: timeSlots.indexOf(b.timeSlot) }))
-                    .sort((a, b) => a.index - b.index); // Sort po indexu, ne po string-u!
+                    .sort((a, b) => a.index - b.index);
 
                 const parentSlots = parentBookings.map(b => b.slot);
 
-                const teacherSlots = bookings
+                // Get teacher's booked slots
+                const teacherBookedSlots = bookings
                     .filter(b => b.teacherId === teacherId)
                     .map(b => b.timeSlot);
 
-                // Ako roditelj nema termine, može bilo koji slobodan slot
+                // If parent has no bookings, return all available slots for this teacher
                 if (parentSlots.length === 0) {
-                    return timeSlots.filter(slot => !teacherSlots.includes(slot));
+                    return timeSlots.filter(slot => !teacherBookedSlots.includes(slot));
                 }
 
-                // Roditelj ima termine
-                const validSlots = [];
+                // Parent has bookings - only return slots adjacent to their schedule
                 const parentIndices = parentBookings.map(b => b.index);
-
                 const minIndex = Math.min(...parentIndices);
                 const maxIndex = Math.max(...parentIndices);
 
-                // Proveri svaki slot
+                const validSlots = [];
+
                 for (let i = 0; i < timeSlots.length; i++) {
                     const slot = timeSlots[i];
 
-                    // Skip ako nastavnik zauzet
-                    if (teacherSlots.includes(slot)) continue;
+                    // Skip if teacher is booked
+                    if (teacherBookedSlots.includes(slot)) continue;
 
-                    // Skip ako roditelj već ima
+                    // Skip if parent already has this slot
                     if (parentSlots.includes(slot)) continue;
 
-                    // Slot je validan ako je adjacent roditeljskim terminima
+                    // Check if slot is adjacent to parent's bookings
                     const isBeforeFirst = (i === minIndex - 1);
                     const isAfterLast = (i === maxIndex + 1);
                     const isBetweenAndAdjacent = (i > minIndex && i < maxIndex &&
@@ -302,7 +303,20 @@
                 }
 
                 return validSlots;
-            }
+            };
+            const getEarliestAvailableSlot = (teacherId) => {
+                const teacherBookedSlots = bookings
+                    .filter(b => b.teacherId === teacherId)
+                    .map(b => b.timeSlot);
+
+                for (let slot of timeSlots) {
+                    if (!teacherBookedSlots.includes(slot)) {
+                        return slot;
+                    }
+                }
+                return null; // All slots booked
+            };
+
             // const getNextAvailableSlot = (teacherId, parentEmail) => {
             //     // Pronađi sve termine ovog nastavnika
             //     const teacherBookings = bookings
@@ -348,14 +362,9 @@
                     return;
                 }
 
-                // 2. Provera validnog slota (bez praznina)
-                const validSlots = getValidSlotsForParent(trimmedEmail, selectedTeacher.id);
-                if (!validSlots.includes(timeSlot)) {
-                    if (validSlots.length > 0) {
-                        alert('⚠️ Dostupni termini za ovog nastavnika: ' + validSlots.join(', ') + '\n\nMorate zakazati bez praznina u rasporedu!');
-                    } else {
-                        alert('⚠️ Ovaj nastavnik nema dostupne termine koji ne prave praznine u vašem rasporedu.');
-                    }
+                // 2. Provera email validnosti
+                if (!validateEmail(trimmedEmail)) {
+                    alert('⚠️ Please enter a valid email address');
                     return;
                 }
 
@@ -365,21 +374,46 @@
                     return;
                 }
 
-                // 4. Provera email validnosti
-                if (!validateEmail(trimmedEmail)) {
-                    alert('⚠️ Please enter a valid email address');
-                    return;
-                }
-
-                // 5. Provera da li je slot već zauzet
+                // 4. Provera da li je slot već zauzet
                 if (isSlotBooked(selectedTeacher.id, timeSlot)) {
                     alert('⚠️ This time slot is already booked with this teacher');
                     return;
                 }
 
-                // 6. Provera da li je roditelj zauzet u to vreme
+                // 5. Provera da li je roditelj zauzet u to vreme
                 if (isParentBusy(trimmedEmail, timeSlot)) {
                     alert('⚠️ You already have a meeting at this time with another teacher');
+                    return;
+                }
+
+                // 6. Check if this is parent's first booking and offer suggestion
+                const myBookings = bookings.filter(b => b.parentEmail === trimmedEmail);
+                if (myBookings.length === 0) {
+                    const earliestSlot = getEarliestAvailableSlot(selectedTeacher.id);
+
+                    if (earliestSlot && timeSlot !== earliestSlot) {
+                        const userChoice = window.confirm(
+                            `💡 Suggestion: Starting at ${earliestSlot} helps everyone finish earlier!\n\n` +
+                            `You selected ${timeSlot} with ${selectedTeacher.name}.\n\n` +
+                            `Would you like to book ${earliestSlot} instead?\n\n` +
+                            `Click OK to book ${earliestSlot}, or Cancel to continue with ${timeSlot}`
+                        );
+
+                        if (userChoice) {
+                            timeSlot = earliestSlot;
+                        }
+                    }
+                }
+
+                // 7. Provera validnog slota (after potential timeSlot change from suggestion)
+                const validSlots = getValidSlotsForParent(trimmedEmail, selectedTeacher.id);
+
+                if (!validSlots.includes(timeSlot)) {
+                    if (validSlots.length > 0) {
+                        alert(`⚠️ You must book without gaps in your schedule!\n\nAvailable slots: ${validSlots.slice(0, 3).join(', ')}${validSlots.length > 3 ? '...' : ''}`);
+                    } else {
+                        alert(`⚠️ ${selectedTeacher.name} has no available slots that fit your schedule.`);
+                    }
                     return;
                 }
 
@@ -437,6 +471,9 @@
                     alert("❌ Error clearing bookings. Please try again.");
                 }
             };
+
+
+
             const fetchSettings = async () => {
                 try {
                     const { collection, getDocs } = window.firestore;
@@ -699,6 +736,7 @@
                                                                 }`}>
                                                                 {availableSlots} slots available
                                                             </span>
+
                                                         </div>
                                                     </div>
                                                     <button
