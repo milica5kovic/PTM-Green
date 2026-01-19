@@ -306,53 +306,53 @@
             const hasParentBookedTeacher = (email, teacherId) => bookings.some(b => b.parentEmail === email && b.teacherId === teacherId);
 
             const getValidSlotsForParent = (parentEmail, teacherId) => {
-                // Get parent's bookings
-                const parentBookings = bookings
+                const parentSlots = bookings
                     .filter(b => b.parentEmail === parentEmail)
-                    .map(b => ({ slot: b.timeSlot, index: timeSlots.indexOf(b.timeSlot) }))
-                    .sort((a, b) => a.index - b.index);
+                    .map(b => timeSlots.indexOf(b.timeSlot))
+                    .sort((a, b) => a - b);
 
-                const parentSlots = parentBookings.map(b => b.slot);
-
-                // Get teacher's booked slots
                 const teacherBookedSlots = bookings
                     .filter(b => b.teacherId === teacherId)
                     .map(b => b.timeSlot);
 
-                // If parent has no bookings, return all available slots for this teacher
+                // Ako roditelj nema nijedan termin — sve je dozvoljeno
                 if (parentSlots.length === 0) {
                     return timeSlots.filter(slot => !teacherBookedSlots.includes(slot));
                 }
 
-                // Parent has bookings - only return slots adjacent to their schedule
-                const parentIndices = parentBookings.map(b => b.index);
-                const minIndex = Math.min(...parentIndices);
-                const maxIndex = Math.max(...parentIndices);
-
                 const validSlots = [];
+                const minSlot = Math.min(...parentSlots);
+                const maxSlot = Math.max(...parentSlots);
 
-                for (let i = 0; i < timeSlots.length; i++) {
-                    const slot = timeSlots[i];
+                timeSlots.forEach((slot, index) => {
+                    // Preskoči ako je nastavnik već zauzet
+                    if (teacherBookedSlots.includes(slot)) return;
 
-                    // Skip if teacher is booked
-                    if (teacherBookedSlots.includes(slot)) continue;
+                    // Preskoči ako roditelj već ima ovaj termin
+                    if (parentSlots.includes(index)) return;
 
-                    // Skip if parent already has this slot
-                    if (parentSlots.includes(slot)) continue;
 
-                    // Check if slot is adjacent to parent's bookings
-                    const isBeforeFirst = (i === minIndex - 1);
-                    const isAfterLast = (i === maxIndex + 1);
-                    const isBetweenAndAdjacent = (i > minIndex && i < maxIndex &&
-                        (parentIndices.includes(i - 1) || parentIndices.includes(i + 1)));
 
-                    if (isBeforeFirst || isAfterLast || isBetweenAndAdjacent) {
+                    const expandsStart = (index === minSlot - 1);
+                    const expandsEnd = (index === maxSlot + 1);
+
+                    // Proveri da li popunjava rupu
+                    let fillsGap = false;
+                    for (let i = 1; i < parentSlots.length; i++) {
+                        if (index > parentSlots[i - 1] && index < parentSlots[i]) {
+                            fillsGap = true;
+                            break;
+                        }
+                    }
+
+                    if (expandsStart || expandsEnd || fillsGap) {
                         validSlots.push(slot);
                     }
-                }
+                });
 
                 return validSlots;
             };
+
             const getEarliestAvailableSlot = (teacherId) => {
                 const teacherBookedSlots = bookings
                     .filter(b => b.teacherId === teacherId)
@@ -423,10 +423,26 @@
                     return;
                 }
 
-                // 4. Provera da li je slot već zauzet
+                // 4. Provera da li je slot već zauzet - predloži sledeći
                 if (isSlotBooked(selectedTeacher.id, timeSlot)) {
-                    alert('⚠️ This time slot is already booked with this teacher');
-                    return;
+                    const validSlots = getValidSlotsForParent(trimmedEmail, selectedTeacher.id);
+                    if (validSlots.length > 0) {
+                        const nextSlot = validSlots[0];
+                        const userChoice = window.confirm(
+                            `⚠️ ${timeSlot} is already booked with ${selectedTeacher.name}.\n\n` +
+                            `Would you like to book the next available slot at ${nextSlot} instead?\n\n` +
+                            `Click OK to book ${nextSlot}, or Cancel to choose manually.`
+                        );
+
+                        if (userChoice) {
+                            timeSlot = nextSlot;
+                        } else {
+                            return;
+                        }
+                    } else {
+                        alert(`⚠️ ${selectedTeacher.name} has no available slots.`);
+                        return;
+                    }
                 }
 
                 // 5. Provera da li je roditelj zauzet u to vreme
@@ -435,7 +451,7 @@
                     return;
                 }
 
-                // 6. Check if this is parent's first booking and offer suggestion
+                // 6. First booking suggestion
                 const myBookings = bookings.filter(b => b.parentEmail === trimmedEmail);
                 if (myBookings.length === 0) {
                     const earliestSlot = getEarliestAvailableSlot(selectedTeacher.id);
@@ -454,19 +470,43 @@
                     }
                 }
 
-                // 7. Provera validnog slota (after potential timeSlot change from suggestion)
-                const validSlots = getValidSlotsForParent(trimmedEmail, selectedTeacher.id);
+                // 7. PROVERA ZA GAP - SAMO UPOZORENJE, NE BLOKIRANJE!
+                const parentSlots = bookings
+                    .filter(b => b.parentEmail === trimmedEmail)
+                    .map(b => timeSlots.indexOf(b.timeSlot))
+                    .sort((a, b) => a - b);
 
-                if (!validSlots.includes(timeSlot)) {
-                    if (validSlots.length > 0) {
-                        alert(`⚠️ You must book without gaps in your schedule!\n\nAvailable slots: ${validSlots.slice(0, 3).join(', ')}${validSlots.length > 3 ? '...' : ''}`);
-                    } else {
-                        alert(`⚠️ ${selectedTeacher.name} has no available slots that fit your schedule.`);
+                if (parentSlots.length > 0) {
+                    const slotIndex = timeSlots.indexOf(timeSlot);
+                    const minSlot = Math.min(...parentSlots);
+                    const maxSlot = Math.max(...parentSlots);
+
+                    const expandsStart = (slotIndex === minSlot - 1);
+                    const expandsEnd = (slotIndex === maxSlot + 1);
+
+                    let fillsGap = false;
+                    for (let i = 1; i < parentSlots.length; i++) {
+                        if (slotIndex > parentSlots[i - 1] && slotIndex < parentSlots[i]) {
+                            fillsGap = true;
+                            break;
+                        }
                     }
-                    return;
+
+                    // SAMO UPOZORI ako bi napravio rupu, ali dozvoli bukiranje
+                    if (!expandsStart && !expandsEnd && !fillsGap) {
+                        const continueAnyway = window.confirm(
+                            `⚠️ Warning: Booking ${timeSlot} will create a gap in your schedule.\n\n` +
+                            `Your current bookings: ${parentSlots.map(i => timeSlots[i]).join(', ')}\n\n` +
+                            `Are you sure you want to continue?`
+                        );
+
+                        if (!continueAnyway) {
+                            return; // Korisnik je odustao
+                        }
+                    }
                 }
 
-                // Sve OK, zakaži termin
+                // SVE OK, ZAKAŽI TERMIN
                 const endTime = new Date(`2025-01-23T${timeSlot}`);
                 endTime.setMinutes(endTime.getMinutes() + SLOT_DURATION);
                 const endStr = endTime.toTimeString().substring(0, 5);
@@ -1125,7 +1165,7 @@
                                             >
                                                 ✅ Finish and download your bookings
                                             </button>
-                                            
+
 
                                         </div>
                                     </div>
@@ -1142,29 +1182,59 @@
                                             const endStr = endTime.toTimeString().substring(0, 5);
                                             const booked = isSlotBooked(selectedTeacher.id, slot);
                                             const parentBusy = parentEmail && isParentBusy(parentEmail.trim().toLowerCase(), slot);
-                                            const validSlots = parentEmail ? getValidSlotsForParent(parentEmail.trim().toLowerCase(), selectedTeacher.id) : [];
-                                            const isValidSlot = !parentEmail || validSlots.includes(slot);
 
+                                            // SAMO UPOZORENJE - NE BLOKIRA!
+                                            let wouldCreateGap = false;
+
+                                            if (parentEmail && !booked && !parentBusy) {
+                                                const trimmedEmail = parentEmail.trim().toLowerCase();
+                                                const parentSlots = bookings
+                                                    .filter(b => b.parentEmail === trimmedEmail)
+                                                    .map(b => timeSlots.indexOf(b.timeSlot))
+                                                    .sort((a, b) => a - b);
+
+                                                if (parentSlots.length > 0) {
+                                                    const slotIndex = timeSlots.indexOf(slot);
+                                                    const minSlot = Math.min(...parentSlots);
+                                                    const maxSlot = Math.max(...parentSlots);
+
+                                                    const expandsStart = (slotIndex === minSlot - 1);
+                                                    const expandsEnd = (slotIndex === maxSlot + 1);
+
+                                                    let fillsGap = false;
+                                                    for (let i = 1; i < parentSlots.length; i++) {
+                                                        if (slotIndex > parentSlots[i - 1] && slotIndex < parentSlots[i]) {
+                                                            fillsGap = true;
+                                                            break;
+                                                        }
+                                                    }
+
+                                                    // Samo OZNAČI kao gap, ali NE BLOKIRAJ
+                                                    if (!expandsStart && !expandsEnd && !fillsGap) {
+                                                        wouldCreateGap = true;
+                                                    }
+                                                }
+                                            }
 
                                             return (
                                                 <button
                                                     key={slot}
                                                     onClick={() => handleBooking(slot)}
-                                                    disabled={booked || parentBusy || !isValidSlot}
+                                                    disabled={parentBusy} // SAMO parentBusy blokira, booked i gap NE!
                                                     className={`p-4 rounded-lg text-sm font-medium transition-all ${booked
-                                                        ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                                                        : !isValidSlot
-                                                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-2 border-gray-300'
-                                                            : parentBusy
-                                                                ? 'bg-yellow-100 text-yellow-800 cursor-not-allowed border-2 border-yellow-400'
+                                                        ? 'bg-gray-200 text-gray-500 cursor-pointer hover:bg-gray-300'
+                                                        : parentBusy
+                                                            ? 'bg-yellow-100 text-yellow-800 cursor-not-allowed border-2 border-yellow-400'
+                                                            : wouldCreateGap
+                                                                ? 'bg-orange-100 text-orange-700 hover:bg-orange-200 hover:shadow-lg border-2 border-orange-400 cursor-pointer'
                                                                 : 'bg-green-100 text-green-800 hover:bg-green-200 hover:shadow-lg border-2 border-green-400'
                                                         }`}
                                                 >
                                                     <div className="font-bold">{slot} - {endStr}</div>
-                                                    {booked && <div className="text-xs mt-1">Booked</div>}
+                                                    {booked && <div className="text-xs mt-1">Booked (click for next)</div>}
                                                     {parentBusy && <div className="text-xs mt-1">⚠️ Conflict</div>}
-                                                    {!isValidSlot && !booked && <div className="text-xs mt-1 text-gray-500">Would create gap</div>}
-                                                    {isValidSlot && !booked && !parentBusy && <div className="text-xs mt-1">Available</div>}
+                                                    {wouldCreateGap && <div className="text-xs mt-1 text-orange-600">⚠️ Creates gap (but bookable)</div>}
+                                                    {!booked && !parentBusy && !wouldCreateGap && <div className="text-xs mt-1">✅ Available</div>}
                                                 </button>
                                             );
                                         })}
