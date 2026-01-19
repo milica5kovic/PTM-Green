@@ -492,7 +492,7 @@
                         }
                     }
 
-                    // SAMO UPOZORI ako bi napravio rupu, ali dozvoli bukiranje
+                    // SAMO UPOZORI ako bi napravio rupu
                     if (!expandsStart && !expandsEnd && !fillsGap) {
                         const continueAnyway = window.confirm(
                             `⚠️ Warning: Booking ${timeSlot} will create a gap in your schedule.\n\n` +
@@ -501,9 +501,24 @@
                         );
 
                         if (!continueAnyway) {
-                            return; // Korisnik je odustao
+                            return;
                         }
                     }
+                }
+
+                // 🚨 KRITIČNA FINALNA PROVERA - Pre čuvanja u Firebase
+                // Ovo hvata race conditions i dupla bukiranja
+                if (isSlotBooked(selectedTeacher.id, timeSlot)) {
+                    alert(`❌ Sorry! Someone just booked ${timeSlot} with ${selectedTeacher.name}. Please choose another time.`);
+                    // Osveži bookings da prikažeš najnovije stanje
+                    fetchBookings();
+                    return;
+                }
+
+                if (isParentBusy(trimmedEmail, timeSlot)) {
+                    alert(`❌ You already have a meeting at ${timeSlot}. Please choose another time.`);
+                    fetchBookings();
+                    return;
                 }
 
                 // SVE OK, ZAKAŽI TERMIN
