@@ -1710,38 +1710,7 @@
                                         >
                                             🗑️ Delete All Bookings
                                         </button>
-                                        <button
-                                            onClick={async () => {
-                                                // Pronađi i obriši duplikate
-                                                const duplicates = bookings.filter((b, index) =>
-                                                    bookings.findIndex(
-                                                        b2 => b2.teacherId === b.teacherId && b2.timeSlot === b.timeSlot
-                                                    ) !== index
-                                                );
-
-                                                if (duplicates.length === 0) {
-                                                    alert('✅ No duplicates found!');
-                                                    return;
-                                                }
-
-                                                if (!window.confirm(`Found ${duplicates.length} duplicate bookings. Delete them?`)) return;
-
-                                                try {
-                                                    const { doc, deleteDoc } = window.firestore;
-                                                    for (let dup of duplicates) {
-                                                        await deleteDoc(doc(window.db, 'bookings', dup.id));
-                                                    }
-                                                    await fetchBookings();
-                                                    alert(`✅ Deleted ${duplicates.length} duplicate bookings!`);
-                                                } catch (err) {
-                                                    console.error(err);
-                                                    alert('❌ Error deleting duplicates');
-                                                }
-                                            }}
-                                            className="bg-orange-600 text-white px-5 py-2.5 rounded-lg hover:bg-orange-700 font-medium shadow-lg"
-                                        >
-                                            🧹 Remove Duplicates
-                                        </button>
+                                        
                                     </div>
                                 </div>
 
