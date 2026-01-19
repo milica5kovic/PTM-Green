@@ -65,7 +65,7 @@
             // Teacher Management States
             const [allTeachers, setAllTeachers] = useState([
                 { id: 'T_Mirjana_Ivanovic', name: 'Ms. Mirjana Ivanovic', subject: 'Class Teacher' },
-                { id: 'T_Ashlie_Williams', name: 'Ms. Ashlie Williams', subject: 'ESL' },
+                { id: 'T_Ashleigh_Williams', name: 'Ms. Ashleigh Williams', subject: 'ESL' },
                 { id: 'T_Snezana_Cvijanovic', name: 'Ms. Snezana Cvijanovic', subject: 'Music & ESL' },
                 { id: 'T_Petar_Jedoksic', name: 'Mr. Petar Jedoksic', subject: 'PE' },
                 { id: 'T_Irena_Djukic', name: 'Ms. Irena Djukic', subject: 'ART' },
@@ -89,11 +89,11 @@
             ]);
 
             const [yearTeacherAssignments, setYearTeacherAssignments] = useState({
-                Y1: ['T_Mirjana_Ivanovic', 'T_Ashlie_Williams', 'T_Snezana_Cvijanovic', 'T_Petar_Jedoksic', 'T_Irena_Djukic', 'T_Iva_Josipovic_Aleksic', 'T_Zoran_Nikolic', 'T_Jana_Radovic', 'T_Milica_Petkovic'],
-                Y2: ['T_Vera_Jovanovic', 'T_Ashlie_Williams', 'T_Snezana_Cvijanovic', 'T_Petar_Jedoksic', 'T_Irena_Djukic', 'T_Iva_Josipovic_Aleksic', 'T_Zoran_Nikolic', 'T_Jana_Radovic', 'T_Milica_Petkovic'],
-                Y3: ['T_Dunja_Vidojkovic', 'T_Ashlie_Williams', 'T_Snezana_Cvijanovic', 'T_Petar_Jedoksic', 'T_Irena_Djukic', 'T_Iva_Josipovic_Aleksic', 'T_Zoran_Nikolic', 'T_Jana_Radovic', 'T_Marija_Mutavdzic', 'T_Milica_Petrovic', 'T_Milica_Petkovic'],
-                Y4: ['T_Jana', 'T_Ashlie_Williams', 'T_Snezana_Cvijanovic', 'T_Petar_Jedoksic', 'T_Irena_Djukic', 'T_Iva_Josipovic_Aleksic', 'T_Zoran_Nikolic', 'T_Jana_Radovic', 'T_Marija_Mutavdzic', 'T_Milica_Petrovic', 'T_Milica_Petkovic'],
-                Y5: ['T_Jelena_Milanovic', 'T_Snezana_Cvijanovic', 'T_Ashlie_Williams', 'T_Zoran_Zivkovic', 'T_Milica_Djukic_Spasojevic', 'T_Milica_Petkovic', 'T_Tijana_Krsa', 'T_Sava_Simic', 'T_Marija_Mutavdzic', 'T_Marina_Ristic', 'T_Milica_Petrovic', 'T_Milos_Lazic', 'T_Irena_Djukic', 'T_Iva_Josipovic_Aleksic', 'T_Zoran_Nikolic', 'T_Jana_Radovic'],
+                Y1: ['T_Mirjana_Ivanovic', 'T_Ashleigh_Williams', 'T_Snezana_Cvijanovic', 'T_Petar_Jedoksic', 'T_Irena_Djukic', 'T_Iva_Josipovic_Aleksic', 'T_Zoran_Nikolic', 'T_Jana_Radovic', 'T_Milica_Petkovic'],
+                Y2: ['T_Vera_Jovanovic', 'T_Ashleigh_Williams', 'T_Snezana_Cvijanovic', 'T_Petar_Jedoksic', 'T_Irena_Djukic', 'T_Iva_Josipovic_Aleksic', 'T_Zoran_Nikolic', 'T_Jana_Radovic', 'T_Milica_Petkovic'],
+                Y3: ['T_Dunja_Vidojkovic', 'T_Ashleigh_Williams', 'T_Snezana_Cvijanovic', 'T_Petar_Jedoksic', 'T_Irena_Djukic', 'T_Iva_Josipovic_Aleksic', 'T_Zoran_Nikolic', 'T_Jana_Radovic', 'T_Marija_Mutavdzic', 'T_Milica_Petrovic', 'T_Milica_Petkovic'],
+                Y4: ['T_Jana', 'T_Ashleigh_Williams', 'T_Snezana_Cvijanovic', 'T_Petar_Jedoksic', 'T_Irena_Djukic', 'T_Iva_Josipovic_Aleksic', 'T_Zoran_Nikolic', 'T_Jana_Radovic', 'T_Marija_Mutavdzic', 'T_Milica_Petrovic', 'T_Milica_Petkovic'],
+                Y5: ['T_Jelena_Milanovic', 'T_Snezana_Cvijanovic', 'T_Ashleigh_Williams', 'T_Zoran_Zivkovic', 'T_Milica_Djukic_Spasojevic', 'T_Milica_Petkovic', 'T_Tijana_Krsa', 'T_Sava_Simic', 'T_Marija_Mutavdzic', 'T_Marina_Ristic', 'T_Milica_Petrovic', 'T_Milos_Lazic', 'T_Irena_Djukic', 'T_Iva_Josipovic_Aleksic', 'T_Zoran_Nikolic', 'T_Jana_Radovic'],
                 Y6: ['T_Sava_Simic', 'T_Snezana_Cvijanovic', 'T_Jelena_Milanovic', 'T_Tamara_Stojancic', 'T_Zoran_Zivkovic', 'T_Milica_Djukic_Spasojevic', 'T_Milica_Petkovic', 'T_Tijana_Krsa', 'T_Marija_Mutavdzic', 'T_Marina_Ristic', 'T_Milica_Petrovic', 'T_Milos_Lazic', 'T_Irena_Djukic', 'T_Iva_Josipovic_Aleksic', 'T_Zoran_Nikolic', 'T_Jana_Radovic'],
                 Y7: ['T_Milos_Lazic', 'T_Snezana_Cvijanovic', 'T_Jelena_Milanovic', 'T_Tamara_Stojancic', 'T_Zoran_Zivkovic', 'T_Milica_Djukic_Spasojevic', 'T_Milica_Petkovic', 'T_Tijana_Krsa', 'T_Sava_Simic', 'T_Marija_Mutavdzic', 'T_Marina_Ristic', 'T_Milica_Petrovic', 'T_Irena_Djukic', 'T_Iva_Josipovic_Aleksic', 'T_Zoran_Nikolic', 'T_Jana_Radovic'],
                 Y8: ['T_Tijana_Krsa', 'T_Snezana_Cvijanovic', 'T_Jelena_Milanovic', 'T_Tamara_Stojancic', 'T_Zoran_Zivkovic', 'T_Milica_Djukic_Spasojevic', 'T_Milica_Petkovic', 'T_Sava_Simic', 'T_Marija_Mutavdzic', 'T_Marina_Ristic', 'T_Milica_Petrovic', 'T_Milos_Lazic', 'T_Irena_Djukic', 'T_Iva_Josipovic_Aleksic', 'T_Zoran_Nikolic', 'T_Jana_Radovic'],
@@ -127,7 +127,7 @@
             const teachers = {
                 Y1: [
                     { id: 'T_Mirjana_Ivanovic', name: 'Ms. Mirjana Ivanovic', subject: 'Class Teacher' },
-                    { id: 'T_Ashlie_Williams', name: 'Ms. Ashlie Williams', subject: 'ESL' },
+                    { id: 'T_Ashleigh_Williams', name: 'Ms. Ashleigh Williams', subject: 'ESL' },
                     { id: 'T_Snezana_Cvijanovic', name: 'Ms. Snezana Cvijanovic', subject: 'Music & ESL' },
                     { id: 'T_Petar_Jedoksic', name: 'Mr. Petar Jedoksic', subject: 'PE' },
                     { id: 'T_Irena_Djukic', name: 'Ms. Irena Djukic', subject: 'ART' },
@@ -138,7 +138,7 @@
                 ],
                 Y2: [
                     { id: 'T_Vera_Jovanovic', name: 'Ms. Vera Jovanovic', subject: 'Class Teacher' },
-                    { id: 'T_Ashlie_Williams', name: 'Ms. Ashlie Williams', subject: 'ESL' },
+                    { id: 'T_Ashleigh_Williams', name: 'Ms. Ashleigh Williams', subject: 'ESL' },
                     { id: 'T_Snezana_Cvijanovic', name: 'Ms. Snezana Cvijanovic', subject: 'Music & ESL' },
                     { id: 'T_Petar_Jedoksic', name: 'Mr. Petar Jedoksic', subject: 'PE' },
                     { id: 'T_Irena_Djukic', name: 'Ms. Irena Djukic', subject: 'ART' },
@@ -149,7 +149,7 @@
                 ],
                 Y3: [
                     { id: 'T_Dunja_Vidojkovic', name: 'Ms. Dunja Vidojkovic', subject: 'Class Teacher' },
-                    { id: 'T_Ashlie_Williams', name: 'Ms. Ashlie Williams', subject: 'ESL' },
+                    { id: 'T_Ashleigh_Williams', name: 'Ms. Ashleigh Williams', subject: 'ESL' },
                     { id: 'T_Snezana_Cvijanovic', name: 'Ms. Snezana Cvijanovic', subject: 'Music & ESL' },
                     { id: 'T_Petar_Jedoksic', name: 'Mr. Petar Jedoksic', subject: 'PE' },
                     { id: 'T_Irena_Djukic', name: 'Ms. Irena Djukic', subject: 'ART' },
@@ -162,7 +162,7 @@
                 ],
                 Y4: [
                     { id: 'T_Jana', name: 'Ms. Jana', subject: 'Class Teacher' },
-                    { id: 'T_Ashlie_Williams', name: 'Ms. Ashlie Williams', subject: 'ESL' },
+                    { id: 'T_Ashleigh_Williams', name: 'Ms. Ashleigh Williams', subject: 'ESL' },
                     { id: 'T_Snezana_Cvijanovic', name: 'Ms. Snezana Cvijanovic', subject: 'Music & ESL' },
                     { id: 'T_Petar_Jedoksic', name: 'Mr. Petar Jedoksic', subject: 'PE' },
                     { id: 'T_Irena_Djukic', name: 'Ms. Irena Djukic', subject: 'ART' },
@@ -176,7 +176,7 @@
                 Y5: [
                     { id: 'T_Jelena_Milanovic', name: 'Ms. Jelena Milanovic', subject: 'Class Teacher Y5a / English' },
                     { id: 'T_Snezana_Cvijanovic', name: 'Ms. Snezana Cvijanovic', subject: 'Class Teacher Y5b & Music & ESL' },
-                    { id: 'T_Ashlie_Williams', name: 'Ms. Ashlie Williams', subject: 'ESL' },
+                    { id: 'T_Ashleigh_Williams', name: 'Ms. Ashleigh Williams', subject: 'ESL' },
                     { id: 'T_Zoran_Zivkovic', name: 'Mr. Zoran Zivkovic', subject: 'History & ESL' },
                     { id: 'T_Milica_Djukic_Spasojevic', name: 'Ms. Milica Djukic-Spasojevic', subject: 'Maths Y5a' },
                     { id: 'T_Milica_Petkovic', name: 'Ms. Milica Petkovic', subject: 'Maths Y5b & ICT' },
