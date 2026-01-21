@@ -300,6 +300,13 @@
                     alert("❌ Error saving booking. Please try again.");
                 }
             };
+            const getUniqueParentCount = () => {
+                const uniqueEmails = new Set(
+                    bookings.map(b => b.parentEmail)
+                );
+                return uniqueEmails.size;
+            };
+
 
             const isSlotBooked = (teacherId, timeSlot) => bookings.some(b => b.teacherId === teacherId && b.timeSlot === timeSlot);
             const isParentBusy = (email, timeSlot) => bookings.some(b => b.parentEmail === email && b.timeSlot === timeSlot);
@@ -1759,7 +1766,12 @@
                                     </div>
                                 </div>
 
-                                <h3 className="text-xl font-bold text-gray-800 mb-4">All Parent Bookings</h3>
+                                <h3 className="text-xl font-bold text-gray-800 mb-4">All Parent Bookings
+                                    <span className="ml-2 text-sm font-medium text-gray-600">
+                                        ({getUniqueParentCount()} parents)
+                                    </span>
+                                </h3>
+
                                 <div className="grid md:grid-cols-2 gap-4">
                                     {Object.values(
                                         bookings.reduce((acc, b) => {
