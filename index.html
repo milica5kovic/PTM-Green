@@ -574,7 +574,11 @@
 
                 saveBooking(newBooking);
                 alert(`✅ Booking Confirmed!\n\nTeacher: ${selectedTeacher.name}\nTime: ${timeSlot} - ${endStr}\nDate: ${PTM_DATE}\n\nYou can download a PDF of all your bookings from the booking page.`);
-                setView('teachers');
+                setTimeout(() => {
+                    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+                }, 200);
+
+                ('teachers');
             };
             const fetchBookings = async () => {
                 try {
@@ -1071,7 +1075,7 @@
                                     <h3 className="text-xl font-bold text-green-900 mb-2">Select Your Child's Year Group</h3>
                                     <p className="text-gray-600 mb-4">Choose the year group to view available teachers</p>
                                 </div>
-                                
+
                                 <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
                                     <MyBookingsSummary />
                                 </div>
@@ -1106,6 +1110,7 @@
                                 <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
                                     <h2 className="text-2xl font-bold text-green-900">Teachers for {selectedYear}</h2>
                                     <p className="text-gray-600 mt-1">Select a teacher to book an appointment</p>
+                                    <MyBookingsSummary />
                                 </div>
                                 <div className="grid md:grid-cols-2 gap-4">
                                     {getTeachersForYear(selectedYear).map(teacher => {
