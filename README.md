@@ -1,30 +1,56 @@
-# 📅 PTM Booking System
+# PTM Booking System
 
-Modern Parent-Teacher Meeting booking system built with React and Firebase.
+A production-ready Parent-Teacher Meeting booking system built for Green School Belgrade.
+Live at [greenschool-ptm.com](https://greenschool-ptm.com)
 
-## 🎯 Features
+## Tech Stack
 
-### For Parents
-- ✅ Select child's year group (Y1-Y9)
-- ✅ View available teachers for each year
-- ✅ Book time slots with teachers
-- ✅ View all bookings in one place
-- ✅ Download PDF schedule
+React · Firebase (Firestore + Auth) · jsPDF
 
-### For Teachers
-- ✅ View personal booking schedule
-- ✅ See all appointments with parent details
-- ✅ Check availability by time slot
+## Features
 
-### For Admins
-- ✅ View all bookings system-wide
-- ✅ Manage PTM settings (date, time, slot duration)
-- ✅ Assign/remove teachers to year groups
-- ✅ Create new teachers
-- ✅ Delete individual or all bookings
-- ✅ Find and fix double bookings
-- ✅ Generate PDF schedules for parents
-- ✅ Search bookings by parent/student/teacher
+### Parents
+- Select child's year group (Y1–Y9)
+- View available teachers per year
+- Book time slots
+- View and download PDF schedule of all bookings
+
+  <img width="2874" height="1626" alt="image" src="https://github.com/user-attachments/assets/833f0a5b-35b8-4a94-961a-78b2507d57f5" />
 
 
 
+### Teachers
+- View personal appointment schedule
+- See parent and student details per slot
+- Check availability by time slot
+
+### Admin
+- Full system overview of all bookings
+- Configure PTM settings (date, time, slot duration)
+- Assign and remove teachers from year groups
+- Create teacher accounts
+- Delete individual or all bookings
+- Detect and resolve double bookings
+- Generate PDF schedules per parent
+- Search by parent, student, or teacher name
+
+## Race Condition Protection
+
+Simultaneous bookings of the same slot are prevented through a three-layer protection system:
+Firestore transactions, optimistic UI locking, and server-side validation — ensuring no two
+users can book the same slot even under concurrent load.
+
+## Running Locally
+
+```bash
+git clone https://github.com/milica5kovic/PTM-Green
+cd PTM-Green
+npm install
+npm run dev
+```
+
+Add your Firebase config to `.env`:
+```
+VITE_FIREBASE_API_KEY=...
+VITE_FIREBASE_PROJECT_ID=...
+```
